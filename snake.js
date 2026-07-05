@@ -607,3 +607,131 @@ if (btnUp && btnDown && btnLeft && btnRight) {
     btnRight.addEventListener("click", () => yapayTusBas("ArrowRight"));
 }
 // ===============================================================
+// ==================== XOX MULTIPLAYER (FIREBASE) MOTORU ====================
+
+// 1. Ücretsiz ve Herkese Açık Test Firebase Kurulumu (Hızlıca çalışması için geçici havuz)
+const firebaseConfig = {
+    databaseURL: "https://xox-multiplayer-test-default-rtdb.firebaseio.com/" 
+};
+// Firebase'i başlatıyoruz
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+// Gerekli Değişkenler
+let aktifOdaKod = null;
+let benimRolum = null; // "X" (Odayı kuran) veya "O" (Odaya katılan)
+let mevcutSira = "X";
+let xoxTahta = ["", "", "", "", "", "", "", "", ""];
+
+// HTML Elementlerini Bağlayalım (Senin arayüzündeki id'lere göre)
+const odaOlusturBtn = document.querySelector("button[onclick*='Oda Oluştur'], #odaOlustur") || document.getElementById("btnCreateRoom"); 
+// Eğer butonlarında id yoksa yukarıdaki seçici otomatik bulmaya çalışır, id varsa aşağıya ekleyebiliriz.
+const odayaKatilBtn = document.querySelector("button[onclick*='Odaya Katıl'], #odayaKatil") || document.getElementById("btnJoinRoom");
+const odaInput = document.querySelector("input[placeholder*='Oda Kodu'], #roomCodeInput");
+const durumYazisi = document.querySelector(".side-panel p, #roomStatus"); // Ekrandaki "Oda Kuruldu!" yazısı
+
+// --- ODA OLUŞTURMA ---
+if (odaOlusturBtn) {
+    odaOlusturBtn.addEventListener("click", () => {
+        // 1000 ile 9999 arasında rastgele 4 haneli oda kodu (Örn: 2826)
+        aktifOdaKod = Math.floor(1000 + Math.random() * 9000).toString();
+        benimRolum = "X"; // Odayı açan her zaman X olur
+        
+        if(odaInput) odaInput.value = aktifOdaKod;
+        if(durumYazisi) durumYazisi.innerText = `Oda Kuruldu! Kod: ${aktifOdaKod}. Arkadaşının girmesi bekleniyor...`;
+
+        // Firebase'de odayı sıfırlayıp oluşturuyoruz
+        database.ref('odalar/' + aktifOdaKod).set({
+            tahta: ["", "", "", "", "", "", "", "", ""],
+            sira: "X",
+            misafirKatildi: false,
+            sonHamle: -1
+        });
+
+        // Odayı anlık dinlemeye başla
+        odayiDizle(aktifOdaKod);
+    });
+}
+
+// --- ODAYA KATILMA ---
+if (odayaKatilBtn && odaInput) {
+    odayaKatilBtn.addEventListener("click", () => {
+        const girilenKod = odaInput.value.trim();
+        if (!girilenKod) return alert("Lütfen geçerli bir oda kodu gir şef!");
+
+        // Firebase'de bu oda var mı kontrol et
+        database.ref('odalar/' + girilenKod).once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                aktifOdaKod = girilenKod;
+                benimRolum = "O"; // Katılan kişi her zaman O olur
+                
+                if(durumYazisi) durumYazisi.innerText = `Odaya Bağlanıldı! Kod: ${aktifOdaKod}. Senin Sıran (O)`;
+
+                // Odayı kuran kişiye misafirin geldiğini haber ver
+                database.ref('odalar/' + aktifOdaKod).update({ misafirKatildi: true });
+
+                // Odayı anlık dinlemeye başla
+                odayiDizle(aktifOdaKod);
+            } else {
+                alert("Böyle bir oda bulunamadı! Kodu doğru girdiğinden emin ol şef.");
+            }
+        });
+    });
+}
+
+// --- ODADAKİ DEĞİŞİKLİKLERİ ANLIK DİNLEME (SİHİRLİ KISIM) ---
+function odayiDizle(roomCode) {
+    database.ref('odalar/' + roomCode).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        xoxTahta = data.tahta;
+        mevcutSira = data.sira;
+
+        // 1. Ekrandaki XOX karelerini Firebase'den gelen verilere göre güncelle
+        const kareler = document.querySelectorAll(".xox-box, .grid-cell, [class*='cell']"); 
+        // Senin XOX karelerinin class'ı hangisiyse sistem otomatik eşler
+        kareler.forEach((kare, index) => {
+            kare.innerText = xoxTahta[index];
+            if(xoxTahta[index] === "X") kare.style.color = "#ff9800";
+            if(xoxTahta[index] === "O") kare.style.color = "#e91e63";
+        });
+
+        // 2. Sıra durumunu ekrana yazdır
+        if(data.misafirKatildi) {
+            if(durumYazisi) durumYazisi.innerText = `Oyun Başladı! Sıra: ${mevcutSira} oyuncusunda.`;
+        }
+    });
+}
+
+// --- KARELERE TIKLAMA OLAYINI MULTIPLAYER'A BAĞLAMA ---
+// Senin mevcut kare tıklama fonksiyonunun en başına şu kontrolü eklemen gerekecek şef:
+function hamleGonder(index) {
+    if (!aktifOdaKod) return; // Oda kurulmadıysa multiplayer çalışmaz
+    if (mevcutSira !== benimRolum) return; // Sıra sende değilse hamle yapamazsın!
+    if (xoxTahta[index] !== "") return; // Tıklanan kare zaten doluysa geç
+
+    // Kendi hamlemizi yerel tahtaya yazıp Firebase'e fırlatıyoruz
+    xoxTahta[index] = benimRolum;
+    const sonrakiSira = (benimRolum === "X") ? "O" : "X";
+
+    database.ref('odalar/' + aktifOdaKod).update({
+        tahta: xoxTahta,
+        sira: sonrakiSira,
+        sonHamle: index
+    });
+}
+
+// Karelerin tıklama eventlerini bu yeni fonksiyona bağlıyoruz
+setTimeout(() => {
+    const kareler = document.querySelectorAll(".xox-box, .grid-cell, [class*='cell']");
+    kareler.forEach((kare, index) => {
+        kare.addEventListener("click", () => {
+            hamleGonder(index);
+        });
+    });
+}, 1000);
+
+// ============================================================================
