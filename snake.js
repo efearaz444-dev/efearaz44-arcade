@@ -544,3 +544,37 @@ document.querySelectorAll(".skin-btn").forEach(btn => {
     });
 });
 startBtn.addEventListener("click", startActiveGame);
+// ==================== ZAMAN ÖLÇER SİSTEMİ ====================
+// Tarayıcı hafızasından daha önceki süreyi saniye olarak çekiyoruz, yoksa 0'dan başlatıyoruz
+let toplamSaniye = parseInt(localStorage.getItem("arcade_total_time")) || 0;
+
+// Saniyeyi saat, dakika ve saniye formatına (Örn: 1sa 14dk 25s) çeviren fonksiyon
+function zamanFormatla(saniye) {
+    let sa = Math.floor(saniye / 3600);
+    let dk = Math.floor((saniye % 3600) / 60);
+    let sn = saniye % 60;
+
+    let sonuc = "";
+    if (sa > 0) sonuc += sa + "sa ";
+    if (dk > 0) sonuc += dk + "dk ";
+    sonuc += sn + "s";
+    return sonuc;
+}
+
+// Sayfa ilk açıldığında eski süreyi ekrana yazdırıyoruz
+const timeDisplayElement = document.getElementById("totalTimeDisplay");
+if (timeDisplayElement) {
+    timeDisplayElement.innerText = zamanFormatla(toplamSaniye);
+}
+
+// Her 1 saniyede (1000 milisaniye) bir çalışacak sayaç
+setInterval(() => {
+    toplamSaniye++; // Süreyi 1 artır
+    localStorage.setItem("arcade_total_time", toplamSaniye); // Tarayıcıya kaydet
+
+    // Ekrandaki yazıyı güncelle
+    if (timeDisplayElement) {
+        timeDisplayElement.innerText = zamanFormatla(toplamSaniye);
+    }
+}, 1000);
+// =============================================================
