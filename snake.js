@@ -126,9 +126,39 @@ window.onload = function() {
 
 saveNameBtn.addEventListener("click", () => {
     let name = usernameInput.value.trim();
-    if (!name) return alert("İsim yazmalısın şef!");
-    currentPlayer = name; localStorage.setItem("arc_username", name);
-    nameModal.style.display = "none"; welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
+    if (!name) return alert("Geçerli bir isim yazmalısın!");
+
+    // Genişletilmiş ve güçlendirilmiş yasaklı kelimeler listesi
+    const yasakliKelimeler = [
+        "31", "otuzbir", "otuz bir", "otuz-bir", "o31", "otuz1",
+        "piç", "pic", "sik", "sg", "sktir", "siktir", "orospu", "orspu", "oç", "oc", 
+        "göt", "got", "gto", "amk", "aq", "amq", "am", "yarrak", "yarak", 
+        "fuck", "bitch", "sikiş", "sikis", "meme", "daşşak", "dassak", "taşşak",
+        "pezevenk", "pznk", "ibne", "ipne", "orospu cocugu", "orospu çocuğu",
+        "şerefsiz", "serefsiz", "salak", "gerizekalı", "gerizekali", "mal"
+    ]; 
+    
+    // Büyük/küçük harf veya boşluk hilelerini engellemek için ismi temizliyoruz
+    const kontrolIsmi = name.toLowerCase().replace(/\s+/g, ''); 
+
+    // Küfür veya yasaklı kelime kontrolü yapılıyor
+    const yasakliBulundu = yasakliKelimeler.some(kelime => {
+        // Yasaklı kelimenin de boşluklarını temizleyip öyle kontrol ediyoruz
+        const temizKelime = kelime.toLowerCase().replace(/\s+/g, '');
+        return kontrolIsmi.includes(temizKelime);
+    });
+
+    if (yasakliBulundu) {
+        alert("Lütfen düzgün bir kullanıcı adı giriniz! Yasaklı kelime veya sayı tespit edildi. 🚫");
+        usernameInput.value = ""; // Giriş kutusunu temizler
+        return; // Oyuna sokmadan burada durdurur
+    }
+
+    // İsim temizse oyun sorunsuz başlar
+    currentPlayer = name; 
+    localStorage.setItem("arc_username", name);
+    nameModal.style.display = "none"; 
+    welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
 });
 
 function switchGame(g) {
