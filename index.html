@@ -1,158 +1,23 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Efearaz44 Arcade - Dijital Oyun Dünyası</title>
-    <link rel="stylesheet" href="style.css">
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-
-    <header>
-        <h1>🎮 EFEARAZ44 ARCADE</h1>
-        <p>Aksiyonlu sesler ve modlarla mini oyun platformu!</p>
-        
-        <div class="game-selector">
-            <button id="selectSnake" class="menu-btn active">🐍 Yılan</button>
-            <button id="selectBrick" class="menu-btn">🧱 Tuğla Kırma</button>
-            <button id="selectSpace" class="menu-btn">🚀 Uzay Savaşı</button>
-            <button id="selectFlappy" class="menu-btn">🛸 Cyber Bird</button>
-            <button id="selectPong" class="menu-btn">🔴 Neon Pong</button>
-            <button id="selectMulti" class="menu-btn multi-btn">🌐 Multiplayer (X-O-X)</button>
-        </div>
-    </header>
-
-    <div id="nameModal" class="modal">
-        <div class="modal-content">
-            <h3>Oyuncu Adını Gir</h3>
-            <input type="text" id="usernameInput" placeholder="Kullanıcı adı..." maxlength="15">
-            <button id="saveNameBtn">Arcade'e Giriş Yap</button>
-        </div>
+    <div id="particles-js"></div>
+    <div class="container">
+        <h1>EFEARAZ44 ARCADE</h1>
     </div>
 
-<main class="game-container">
-        <div class="side-panel">
-            <h3>🎵 Müzik & Ses</h3>
-            <button id="bgmBtn" style="background:#e91e63; width:100%; margin-bottom:10px;">🔊 Müzik Aç/Kapat</button>
-            <hr>
-            <h3>🏆 Liderlik Tablosu</h3>
-            <div class="leaderboard-section">
-                <h4>🔥 Tüm Zamanların En İyisi</h4>
-                <p id="allTimeBest">Henüz yok...</p>
-            </div>
-            <hr>
-            <div class="leaderboard-section"><h4>🐍 Yılan Rekoru</h4><p id="snakeBest">0 Puan</p></div>
-            <div class="leaderboard-section"><h4>🧱 Tuğla Rekoru</h4><p id="brickBest">0 Puan</p></div>
-            <div class="leaderboard-section"><h4>🚀 Uzay Savaşı Rekoru</h4><p id="spaceBest">0 Puan</p></div>
-            <div class="leaderboard-section"><h4>🛸 Cyber Bird Rekoru</h4><p id="flappyBest">0 Puan</p></div>
-            <div class="leaderboard-section"><h4>🔴 Pong Rekoru</h4><p id="pongBest">0 Puan</p></div>
-            
-            <div class="leaderboard-section" style="border-top: 1px dashed #444; margin-top: 8px; padding-top: 8px;">
-                <h4 style="color: #ffca28;">⏱️ Sitede Geçirilen Zaman</h4>
-                <p id="totalTimeDisplay" style="color: #ffca28; font-weight: bold;">0s</p>
-            </div>
-            <hr>
-            
-            <h3>💰 Cüzdanın</h3>
-            <p><span id="totalGold">0</span> Altın</p>
-        </div>
-
-        <div class="game-box">
-            <h2 id="welcomeText">🐍 Klasik Yılan Oyunu</h2>
-            <div class="score-board">Skor: <span id="score">0</span></div>
-            
-            <div id="multiplayerPanel" class="multi-setup hidden">
-                <h3>🌐 Çevrimiçi Oda Sistemi</h3>
-                <div class="multi-row">
-                    <button id="createRoomBtn">Oda Oluştur</button>
-                    <input type="text" id="roomCodeInput" placeholder="Oda Kodu Gir...">
-                    <button id="joinRoomBtn">Odaya Katıl</button>
-                </div>
-                <p id="roomStatus">Bir odaya katılın veya yeni oda açın...</p>
-            </div>
-
-<canvas id="gameCanvas" width="400" height="400"></canvas>
-            
-            <div id="mobileController" class="mobile-controls">
-                <div class="row">
-                    <button class="mobile-btn" id="btnUp">🔼</button>
-                </div>
-                <div class="row">
-                    <button class="mobile-btn" id="btnLeft">◀️</button>
-                    <button class="mobile-btn" id="btnDown">🔽</button>
-                    <button class="mobile-btn" id="btnRight">▶️</button>
-                </div>
-                <div class="row" style="margin-top: 5px;">
-                    <button class="mobile-btn action-btn" id="btnAction">💥 AKSİYON / ATEŞ</button>
-                </div>
-            </div> <style>
-                .mobile-controls {
-                    display: none; /* Bilgisayarda tamamen gizler */
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    margin-top: 15px;
-                    user-select: none;
-                }
-                .mobile-controls .row {
-                    display: flex;
-                    justify-content: center;
-                }
-                .mobile-btn {
-                    width: 60px;
-                    height: 60px;
-                    margin: 5px;
-                    background: #2196f3;
-                    color: white;
-                    border: none;
-                    border-radius: 50%;
-                    font-size: 24px;
-                    font-weight: bold;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                    touch-action: manipulation;
-                    cursor: pointer;
-                }
-                .mobile-btn:active {
-                    background: #0b7dda;
-                    transform: scale(0.95);
-                }
-                .action-btn {
-                    width: 200px;
-                    border-radius: 10px;
-                    background: #e91e63;
-                    font-size: 16px;
-                }
-                .action-btn:active {
-                    background: #c2185b;
-                }
-                @media (max-width: 768px) {
-                    .mobile-controls {
-                        display: flex;
-                    }
-                }
-            </style>
-
-            <div class="controls">
-                <button id="startBtn">Oyunu Başlat</button>
-                <button id="shopBtn" style="background: linear-gradient(45deg, #ff9800, #ffb74d); margin-left: 10px;">🛒 Desen Dükkanı</button>
-            </div>
-
-        <div id="shopPanel" class="side-panel hidden">
-            <h3>🛒 Desen Dükkanı</h3>
-            <div class="shop-item"><p>🟢 Klasik Yeşil (Açık)</p><button class="skin-btn active" data-skin="classic">Seç</button></div>
-            <div class="shop-item"><p>🔵 Neon Mavi (50 Altın)</p><button class="skin-btn" data-skin="blue" data-cost="50">Satın Al</button></div>
-            <div class="shop-item"><p>🔴 Parlak Kırmızı (100 Altın)</p><button class="skin-btn" data-skin="red" data-cost="100">Satın Al</button></div>
-            <div class="shop-item"><p>👑 Altın Sarısı (200 Altın)</p><button class="skin-btn" data-skin="gold" data-cost="200">Satın Al</button></div>
-        </div>
-    </main>
-
-    <footer>
-        <p>Efearaz44 Tarafından Geliştirildi Hakları Saklıdır. 🚀</p>
-    </footer>
-
-    <script src="snake.js"></script>
+    <!-- Kütüphaneler -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
+    <!-- Senin Dosyaların -->
+    <script>particlesJS.load('particles-js', 'https://raw.githubusercontent.com/VincentGarreau/particles.js/master/demo/particles.json');</script>
+    <script src="js/firebase.js"></script>
+    <script src="js/games.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
