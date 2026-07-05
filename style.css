@@ -1,0 +1,369 @@
+/* --- TEMEL AYARLAR VE RESET --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- HAREKETLİ ARKA PLAN (CANLI BEYAZ ÇİZGİLER) --- */
+body {
+    background-color: #000; /* Temel siyah */
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    overflow: hidden; /* Çizgiler ekrandan taşmasın */
+}
+
+/* Arka plandaki hareket efekti için katman */
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: -2; /* En arkaya al */
+}
+
+/* Kayan beyaz çizgiler animasyonu */
+body::after {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 5px,
+        rgba(255, 255, 255, 0.05) 5px,
+        rgba(255, 255, 255, 0.05) 10px
+    );
+    animation: moveLines 15s linear infinite;
+    z-index: -1; /* Arka plan ızgarasının önünde, ama içeriğin arkasında */
+}
+
+/* Animasyon tanımı (Çizgileri aşağı kaydırır) */
+@keyframes moveLines {
+    0% {
+        transform: translateY(0%);
+    }
+    100% {
+        transform: translateY(50%);
+    }
+}
+
+/* --- İÇERİK TASARIMI (HAREKETLİ ARKA PLANIN ÜSTÜNDE) --- */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    z-index: 10;
+}
+
+header h1 {
+    color: #fff;
+    font-size: 2.8rem;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.7); /* Hafif yeşil parıltı */
+}
+
+header p {
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    z-index: 10;
+}
+
+.game-box {
+    background-color: rgba(45, 45, 45, 0.8); /* Yarı şeffaf panel */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 15px 40px rgba(0, 0, 0, 0.7);
+    text-align: center;
+    backdrop-filter: blur(5px); /* Panelin arkasındaki çizgileri hafif bulanıklaştırır */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* İnce bir kenarlık */
+}
+
+.score-board {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #ffeb3b;
+    text-shadow: 0 0 5px rgba(255, 235, 59, 0.5);
+}
+
+/* Oyun alanını (Canvas) parlatıyoruz */
+canvas {
+    background-color: #000;
+    border: 3px solid #4caf50;
+    border-radius: 8px;
+    display: block;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.6); /* Yeşil neon parıltı */
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+button {
+    background: linear-gradient(45deg, #4caf50, #81c784);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    border-radius: 30px; /* Yuvarlak buton */
+    cursor: pointer;
+    transition: 0.3s ease;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+button:hover {
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.5);
+    transform: translateY(-2px);
+}
+
+footer {
+    margin-top: 30px;
+    color: #888;
+    font-size: 1rem;
+    z-index: 10;
+}
+/* --- YENİ EKLENEN PANELLERİN TASARIMI --- */
+.side-panel {
+    background-color: rgba(45, 45, 45, 0.85);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    width: 220px;
+    margin: 0 15px;
+    text-align: left;
+}
+
+.side-panel h3 {
+    color: #ffeb3b;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.side-panel ul {
+    list-style: none;
+}
+
+.side-panel ul li {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: #ddd;
+    display: flex;
+    justify-content: space-between;
+}
+
+.side-panel hr {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 15px 0;
+}
+
+/* Dükkan Eşyaları */
+.shop-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.shop-item p {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.skin-btn {
+    width: 100%;
+    padding: 6px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+    background: #555;
+}
+
+.skin-btn.active {
+    background: #4caf50 !important;
+}
+
+.hidden {
+    display: none;
+}
+
+/* OYUNCU ADI POPUP (MODAL) */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: #2d2d2d;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid #4caf50;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+}
+
+.modal-content h3 {
+    margin-bottom: 15px;
+    color: #fff;
+}
+
+.modal-content input {
+    padding: 10px;
+    width: 80%;
+    border-radius: 5px;
+    border: none;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    text-align: center;
+}
+/* --- MOBİL KONTROL TUŞLARI TASARIMI --- */
+.mobile-controls {
+    display: none; /* Standart olarak (bilgisayarda) gizli tut */
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px;
+    gap: 5px;
+}
+
+.mobile-controls .row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.mobile-btn {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.5rem;
+    border-radius: 50%; /* Tam yuvarlak butonlar */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    touch-action: manipulation; /* Mobilde çift tıklama gecikmesini önler */
+    transition: background 0.1s, transform 0.1s;
+}
+
+.mobile-btn:active {
+    background: rgba(76, 175, 80, 0.6); /* Basıldığında yeşil neon parlasın */
+    transform: scale(0.9);
+}
+
+/* --- RESPONSIVE: EKRAN KÜÇÜLDÜĞÜNDE (MOBİLDE) ÇALIŞACAK KURALLAR --- */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto; /* Mobilde aşağı kaydırmaya izin ver */
+    }
+    .game-container {
+        flex-direction: column; /* Paneller mobilde alt alta gelsin */
+        gap: 20px;
+    }
+    .side-panel {
+        width: 100%; /* Mobilde paneller tam genişlik olsun */
+        margin: 10px 0;
+    }
+    canvas {
+        width: 100% !important; /* Oyun alanı telefon ekranına sığsın */
+        height: auto !important;
+    }
+    .mobile-controls {
+        display: flex; /* Telefondan girildiğinde butonları görünür yap! */
+    }
+}
+/* --- YENİ LİDERLİK BÖLÜMLERİ --- */
+.leaderboard-section {
+    margin-bottom: 12px;
+}
+.leaderboard-section h4 {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-bottom: 2px;
+}
+.leaderboard-section p {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+}
+#allTimeBest {
+    color: #ffeb3b !important;
+    text-shadow: 0 0 5px rgba(255, 235, 59, 0.4);
+}
+.action-btn {
+    width: 140px !important;
+    border-radius: 10px !important;
+    background: rgba(244, 67, 54, 0.3) !important;
+    border: 2px solid #f44336 !important;
+}
+/* --- MULTIPLAYER VE DİNAMİK MENÜ TASARIMI --- */
+.multi-btn {
+    background: linear-gradient(45deg, #9c27b0, #e91e63) !important;
+    color: white !important;
+    border: none !important;
+}
+.multi-setup {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px dashed #9c27b0;
+}
+.multi-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+}
+.multi-row input {
+    background: #222;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-align: center;
+    width: 120px;
+}
+.multi-row button {
+    background: #9c27b0;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.hidden {
+    display: none !important;
+}
