@@ -578,3 +578,32 @@ setInterval(() => {
     }
 }, 1000);
 // =============================================================
+// ==================== MOBİL KONTROL SİSTEMİ ====================
+// HTML'deki mobil butonları çekiyoruz
+const btnUp = document.getElementById("btnUp");
+const btnDown = document.getElementById("btnDown");
+const btnLeft = document.getElementById("btnLeft");
+const btnRight = document.getElementById("btnRight");
+
+// Klavyedeki yön tuşlarını taklit eden yardımcı fonksiyon
+function yapayTusBas(tusKodu) {
+    // Oyunlarının yön tuşlarını algıladığı event mekanizmasını tetikliyoruz
+    const event = new KeyboardEvent("keydown", { key: tusKodu });
+    window.dispatchEvent(event); // Eğer oyun pencereyi dinliyorsa
+    document.dispatchEvent(event); // Eğer oyun dokümanı dinliyorsa
+}
+
+// Butonlara dokunulduğunda (Touchstart mobilde daha hızlı tepki verir)
+if (btnUp && btnDown && btnLeft && btnRight) {
+    btnUp.addEventListener("touchstart", (e) => { e.preventDefault(); yapayTusBas("ArrowUp"); });
+    btnDown.addEventListener("touchstart", (e) => { e.preventDefault(); yapayTusBas("ArrowDown"); });
+    btnLeft.addEventListener("touchstart", (e) => { e.preventDefault(); yapayTusBas("ArrowLeft"); });
+    btnRight.addEventListener("touchstart", (e) => { e.preventDefault(); yapayTusBas("ArrowRight"); });
+
+    // Bilgisayardan mouse ile test edebilmek için tıklama destekleri:
+    btnUp.addEventListener("click", () => yapayTusBas("ArrowUp"));
+    btnDown.addEventListener("click", () => yapayTusBas("ArrowDown"));
+    btnLeft.addEventListener("click", () => yapayTusBas("ArrowLeft"));
+    btnRight.addEventListener("click", () => yapayTusBas("ArrowRight"));
+}
+// ===============================================================

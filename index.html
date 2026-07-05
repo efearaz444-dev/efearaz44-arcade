@@ -71,23 +71,71 @@
                 <p id="roomStatus">Bir odaya katılın veya yeni oda açın...</p>
             </div>
 
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
             
-            <div class="mobile-controls">
-                <div class="row"><button class="mobile-btn" id="btnUp">🔼</button></div>
+            <div id="mobileController" class="mobile-controls">
+                <div class="row">
+                    <button class="mobile-btn" id="btnUp">🔼</button>
+                </div>
                 <div class="row">
                     <button class="mobile-btn" id="btnLeft">◀️</button>
+                    <button class="mobile-btn" id="btnDown">🔽</button>
                     <button class="mobile-btn" id="btnRight">▶️</button>
                 </div>
-                <div class="row"><button class="mobile-btn" id="btnDown">🔽</button></div>
-                <div class="row" style="margin-top: 5px;"><button class="mobile-btn action-btn" id="btnAction">💥 AKSİYON / ATEŞ</button></div>
-            </div>
+                <div class="row" style="margin-top: 5px;">
+                    <button class="mobile-btn action-btn" id="btnAction">💥 AKSİYON / ATEŞ</button>
+                </div>
+            </div> <style>
+                .mobile-controls {
+                    display: none; /* Bilgisayarda tamamen gizler */
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: 15px;
+                    user-select: none;
+                }
+                .mobile-controls .row {
+                    display: flex;
+                    justify-content: center;
+                }
+                .mobile-btn {
+                    width: 60px;
+                    height: 60px;
+                    margin: 5px;
+                    background: #2196f3;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    font-size: 24px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                    touch-action: manipulation;
+                    cursor: pointer;
+                }
+                .mobile-btn:active {
+                    background: #0b7dda;
+                    transform: scale(0.95);
+                }
+                .action-btn {
+                    width: 200px;
+                    border-radius: 10px;
+                    background: #e91e63;
+                    font-size: 16px;
+                }
+                .action-btn:active {
+                    background: #c2185b;
+                }
+                @media (max-width: 768px) {
+                    .mobile-controls {
+                        display: flex;
+                    }
+                }
+            </style>
 
             <div class="controls">
                 <button id="startBtn">Oyunu Başlat</button>
                 <button id="shopBtn" style="background: linear-gradient(45deg, #ff9800, #ffb74d); margin-left: 10px;">🛒 Desen Dükkanı</button>
             </div>
-        </div>
 
         <div id="shopPanel" class="side-panel hidden">
             <h3>🛒 Desen Dükkanı</h3>
