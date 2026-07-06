@@ -1,6 +1,6 @@
 // Firebase Yapılandırma Bilgileri (Sadece Ayarlar Kalacak)
 const firebaseConfig = {
-    apiKey: "AIzaSyAoO_FoG-yasmF9tAOh1BfRJWhs4DYSZs",
+    apiKey: "AIzaSyAo0_FoG-yasmF9tAOyH1BfRJWhs4DYSZs",
     authDomain: "ucretsiz-oyun-sitem.firebaseapp.com",
     databaseURL: "https://ucretsiz-oyun-sitem-default-rtdb.firebaseio.com",
     projectId: "ucretsiz-oyun-sitem",
