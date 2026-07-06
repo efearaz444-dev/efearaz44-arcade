@@ -43,7 +43,7 @@
             <button id="selectMulti">XOX Multiplayer</button>
         </nav>
 
-        <main class="main-arena">
+<main class="main-arena">
             <aside class="side-panel leaderboard">
                 <h3>🏆 En İyiler</h3>
                 <div class="score-row"><span>👑 Rekor:</span> <span id="allTimeBest">Yükleniyor...</span></div>
@@ -93,11 +93,14 @@
 
         <footer class="mobile-controls">
             <div class="control-row">
+                <button id="mobileStartBtn" class="mobile-start-btn">🎮 OYUNU BAŞLAT / YENİDEN BAŞLAT</button>
+            </div>
+            <div class="control-row">
                 <button id="btnUp" class="arrow-btn">▲</button>
             </div>
             <div class="control-row">
                 <button id="btnLeft" class="arrow-btn">◀</button>
-                <button id="btnAction" class="action-btn">FİRE / JUMP</button>
+                <button id="btnAction" class="action-btn">FİRE / JUMP (Zıpla)</button>
                 <button id="btnRight" class="arrow-btn">▶</button>
             </div>
             <div class="control-row">
@@ -124,6 +127,8 @@
             "retina_detect": true
         });
     </script>
-    <script src="./main.js"></script>
+    <script src="main.js"></script>
+    <script src="firebase-multi.js"></script>
+    <script src="controls.js"></script>
 </body>
 </html>

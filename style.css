@@ -285,4 +285,22 @@ canvas {
     .main-arena { flex-direction: column; align-items: center; }
     .side-panel { width: 100%; max-width: 400px; min-height: auto; box-sizing: border-box; }
     canvas { width: 90vw; height: 90vw; max-width: 400px; max-height: 400px; }
+};
+/* Mobil Başlat Butonu Tasarımı */
+.mobile-start-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(45deg, var(--neon-pink), #b3002d);
+    color: white;
+    font-weight: bold;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 10px rgba(245, 23, 68, 0.4);
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+}
+.mobile-start-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 0 15px rgba(245, 23, 68, 0.8);
 }
