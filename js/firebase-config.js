@@ -1,13 +1,13 @@
 // Firebase Yapılandırma Bilgileri (Sadece Ayarlar Kalacak)
 const firebaseConfig = {
-    apiKey: "AIzaSyAo0_FoG-yasmF9tAOyH1BfRJWhs4DYSZs",
-    authDomain: "ucretsiz-oyun-sitem.firebaseapp.com",
-    databaseURL: "https://ucretsiz-oyun-sitem-default-rtdb.firebaseio.com",
-    projectId: "ucretsiz-oyun-sitem",
-    storageBucket: "ucretsiz-oyun-sitem.firebasestorage.app",
-    messagingSenderId: "602558212782",
-    appId: "1:602558212782:web:4dcdfeb0ebb914cdc0db3f",
-    measurementId: "G-YVYQ50PQ11"
+    apiKey: "AIzaSyAMkf1fwDYYyjRmeNT5s28RwUyF3dQrsA4",
+    authDomain: "efearaz44-arcade.firebaseapp.com",
+    databaseURL: "https://efearaz44-arcade-default-rtdb.firebaseio.com",
+    projectId: "efearaz44-arcade",
+    storageBucket: "efearaz44-arcade.firebasestorage.app",
+    messagingSenderId: "487940692682",
+    appId: "1:487940692682:web:f2e34153ff9763288ff233",
+    measurementId: "G-LQKP79GEVM"
 };
 
 // Firebase'i başlatıyoruz
