@@ -121,14 +121,22 @@ function drawBlockBlast() {
 function handleBBGridClick(e) {
     if (activeGame !== "blockblast" || !isGameRunning) return;
 
+    // Tıklanan yerin canvas üzerindeki gerçek yerini hatasız hesaplama
     const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
 
     let holderWidth = canvas.width / 3;
     let holderY = bbOffsetY + (BB_GRID * bbCellSize) + 10;
 
-    if (mouseY >= holderY && mouseY <= holderY + 80) {
+    // Konsola test yazısı yazdırıyoruz (F12'de görünür, zararsızdır)
+    console.log("Tıklanan Yer -> X:", Math.floor(mouseX), "Y:", Math.floor(mouseY), "Parça Alanı Y:", holderY);
+
+    // A. Alt Kısımdaki Parçalardan Birine mi Tıklandı?
+    if (mouseY >= holderY && mouseY <= holderY + 120) {
         let clickedIdx = Math.floor(mouseX / holderWidth);
         if (clickedIdx >= 0 && clickedIdx < 3 && bbPieces[clickedIdx] !== null) {
             bbSelectedIdx = clickedIdx;
@@ -138,6 +146,7 @@ function handleBBGridClick(e) {
         return;
     }
 
+    // B. Tahtaya mı Tıklandı ve Parça Seçili mi?
     if (bbSelectedIdx !== null) {
         const c = Math.floor((mouseX - bbOffsetX) / bbCellSize);
         const r = Math.floor((mouseY - bbOffsetY) / bbCellSize);
