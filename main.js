@@ -242,7 +242,7 @@ function handleContinuousInput() {
 // --- MAUSE & DOKUNMA HABERLEŞMESİ ---
 function setupCanvasClicks() {
     const handleAction = (clientX, clientY, isStart) => {
-        if (!isGameRunning) return;
+        // Oyun başlamadıysa bile tıklamayı kabul et (özellikle XOX/Start için)
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
@@ -250,11 +250,20 @@ function setupCanvasClicks() {
         const y = (clientY - rect.top) * scaleY;
 
         if (activeGame === "blockblast") {
+            if (!isGameRunning) return;
             handleBlockBlastClick(x, y);
         } else if (activeGame === "gartic") {
+            if (!isGameRunning) return;
             if(isStart) isDrawing = true;
             if(isDrawing) garticStrokes.push({ x, y, color: getSkinColors().head, type: isStart ? 'start' : 'draw' });
             drawGartic();
+        } else if (activeGame === "multi") {
+            // BURASI ÇOK ÖNEMLİ: 
+            // Eğer senin XOX oyununda tıklamayı yöneten fonksiyonun adı 
+            // 'handleMultiClick' değilse, buradaki ismi ona göre değiştir!
+            if (typeof handleMultiClick === 'function') {
+                handleMultiClick(x, y);
+            }
         }
     };
 
@@ -262,8 +271,16 @@ function setupCanvasClicks() {
     canvas.addEventListener("mousemove", e => handleAction(e.clientX, e.clientY, false));
     window.addEventListener("mouseup", () => isDrawing = false);
 
-    canvas.addEventListener("touchstart", e => { e.preventDefault(); handleAction(e.touches[0].clientX, e.touches[0].clientY, true); });
-    canvas.addEventListener("touchmove", e => { e.preventDefault(); handleAction(e.touches[0].clientX, e.touches[0].clientY, false); });
+    canvas.addEventListener("touchstart", e => { 
+        e.preventDefault(); 
+        handleAction(e.touches[0].clientX, e.touches[0].clientY, true); 
+    }, {passive: false});
+    
+    canvas.addEventListener("touchmove", e => { 
+        e.preventDefault(); 
+        handleAction(e.touches[0].clientX, e.touches[0].clientY, false); 
+    }, {passive: false});
+    
     window.addEventListener("touchend", () => isDrawing = false);
 }
 
