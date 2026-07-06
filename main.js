@@ -79,44 +79,39 @@ auth.onAuthStateChanged((user) => {
 // ============================================================================
 // --- FIREBASE GOOGLE & E-POSTA GİRİŞ SİSTEMİ (SORUNSUZ POPUP MODU) ---
 // ============================================================================
-
-// Google ile küçük pencere (Popup) açarak giriş yapma fonksiyonu
-// Google ile Giriş Fonksiyonu (Kurşun Geçirmez Son Sürüm)
+// Google ile Giriş Fonksiyonu (Tam Uyumlu Son Sürüm)
 function googleIleGiris() {
-    // Tarayıcı konsoluna tıklandığını kesin olarak bas ki çalıştığını görelim
     console.log("Google butonuna tıklandı, fonksiyon tetiklendi!");
 
-    // Projedeki auth nesnesini veya firebase auth nesnesini hangisi varsa yakala
-    let firebaseAuth;
-    if (typeof auth !== 'undefined') {
-        firebaseAuth = auth;
-    } else if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebaseAuth = firebase.auth();
-    } else {
-        alert("Kritik Hata: Firebase Auth sistemi projenizde hiç bulunamadı!");
+    // Global auth nesnesini kontrol et
+    if (!window.auth) {
+        alert("Hata: Firebase Auth sistemi henüz hazır değil!");
         return;
     }
 
     const provider = new firebase.auth.GoogleAuthProvider();
     
-    // Popup penceresini zorla açtırıyoruz
-    firebaseAuth.signInWithPopup(provider)
+    // Küçük pencereyi (Popup) tetikle
+    window.auth.signInWithPopup(provider)
         .then((result) => {
             const user = result.user;
             console.log("Giriş Başarılı:", user.email);
             
-            // Kullanıcı verilerini Realtime Database'e güvenle yaz
-            database.ref('users/' + user.uid).update({
-                username: user.email.split('@')[0],
-                lastLogin: new Date().toLocaleDateString()
-            }).then(() => {
-                console.log("Kullanıcı veritabanına senkronize edildi.");
-                // Eğer modal açıksa burada otomatik kapatabilirsin
-            });
+            // Veritabanına senkronize et
+            if (window.database) {
+                window.database.ref('users/' + user.uid).update({
+                    username: user.email.split('@')[0],
+                    lastLogin: new Date().toLocaleDateString()
+                }).then(() => {
+                    console.log("Kullanıcı veritabanına kaydedildi.");
+                    location.reload(); // Giriş başarılı olunca sayfayı yenile
+                });
+            } else {
+                location.reload();
+            }
         })
         .catch((error) => {
-            console.error("Firebase Detaylı Giriş Hatası:", error);
-            // İşte gizlenen tüm hataları (popup engeli dahil) burası ekrana fırlatacak!
+            console.error("Firebase Giriş Hatası:", error);
             alert("Google Giriş Hatası!\nKod: " + error.code + "\nMesaj: " + error.message);
         });
 }

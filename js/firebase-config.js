@@ -1,36 +1,20 @@
-// js/firebase-config.js
-const firebaseConfig = { databaseURL: "https://ucretsiz-oyun-sitem-default-rtdb.firebaseio.com/" };
-if (typeof firebase !== "undefined" && !firebase.apps.length) { 
-    firebase.initializeApp(firebaseConfig); 
-}
-window.database = typeof firebase !== "undefined" ? firebase.database() : null;
-window.auth = typeof firebase !== "undefined" ? firebase.auth() : null;
+// Firebase Yapılandırma Bilgileri (Sadece Ayarlar Kalacak)
+const firebaseConfig = {
+    apiKey: "AIzaSyAoO_FoG-yasmF9tAOh1BfRJWhs4DYSZs",
+    authDomain: "ucretsiz-oyun-sitem.firebaseapp.com",
+    databaseURL: "https://ucretsiz-oyun-sitem-default-rtdb.firebaseio.com",
+    projectId: "ucretsiz-oyun-sitem",
+    storageBucket: "ucretsiz-oyun-sitem.firebasestorage.app",
+    messagingSenderId: "602558212782",
+    appId: "1:602558212782:web:4dcdfeb0ebb914cdc0db3f",
+    measurementId: "G-YVYQ50PQ11"
+};
 
-// Kayıt ve Giriş Fonksiyonu
-async function girisYapVeyaKaydol() {
-    const user = document.getElementById("usernameInput").value;
-    const pass = document.getElementById("passwordInput").value;
-    if (!user || !pass) return alert("Lütfen boş alan bırakma!");
-    
-    // Sahte e-posta hilesi
-    const email = user.toLowerCase().replace(/\s/g, '') + "@arcadesalonu.com";
-    
-    try {
-        await auth.signInWithEmailAndPassword(email, pass);
-        location.reload();
-    } catch (error) {
-        if (error.code === 'auth/user-not-found') {
-            await auth.createUserWithEmailAndPassword(email, pass);
-            alert("Yeni hesap oluşturuldu!");
-            location.reload();
-        } else {
-            alert("Hata: " + error.message);
-        }
-    }
+// Firebase'i başlatıyoruz
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
 }
 
-// Google ile Giriş
-function googleIleGiris() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then(() => location.reload());
-}
+// Global olarak auth ve database nesnelerini tanımlıyoruz
+window.auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+window.database = typeof firebase !== 'undefined' ? firebase.database() : null;
