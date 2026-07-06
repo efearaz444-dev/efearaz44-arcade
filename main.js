@@ -287,9 +287,10 @@ function generateNewBBShapes() {
 }
 
 function drawBlockBlast() {
-    clearCanvas(); drawWatermark();
+    clearCanvas(); 
+    drawWatermark();
     
-    // Izgarayı Çiz
+    // 1. İZGARAYI ÇİZ
     for (let r = 0; r < BB_ROWS; r++) {
         for (let c = 0; c < BB_COLS; c++) {
             ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
@@ -301,29 +302,45 @@ function drawBlockBlast() {
         }
     }
     
-    // Alttaki Seçilebilir Parçaları Çiz
-    ctx.fillStyle = "rgba(255,255,255,0.05)";
-    ctx.fillRect(10, 365, canvas.width - 20, 110);
+    // 2. ALTTAKİ BLOK PANELİNİ ÇİZ
+    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.fillRect(10, 370, canvas.width - 20, 100);
+    
+    // 3. SEÇİLEBİLİR PARÇALARI ÇİZ (Dinamik ve Sığabilir)
+    const BLOK_BOYUTU = 16; // Küçük bloklar ki sığsın
+    const PANEL_BASLANGIC_X = 50; 
+    const ARALIK = 110;     // Blok grupları arası mesafe
     
     bbAvailableShapes.forEach((shape, index) => {
         if (!shape) return;
-        let startX = 30 + index * 125;
-        let startY = 380;
         
+        let startX = PANEL_BASLANGIC_X + (index * ARALIK);
+        let startY = 390;
+        
+        // ELDE TUTMA EFEKTİ (Seçiliyse Parlat)
         if (index === bbSelectedShapeIndex) {
-            ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2;
-            ctx.strokeRect(startX - 5, startY - 5, 110, 85);
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = "#ffd700";
+            ctx.lineWidth = 3;
+            // Bloğun etrafına seçildiğini belli eden çerçeve
+            ctx.strokeRect(startX - 10, startY - 10, 80, 60);
             ctx.lineWidth = 1;
+        } else {
+            ctx.shadowBlur = 0;
         }
         
+        // Blok parçalarını çiz
         shape.matrix.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val === 1) {
                     ctx.fillStyle = shape.color;
-                    ctx.fillRect(startX + c * 20, startY + r * 20, 18, 18);
+                    ctx.fillRect(startX + (c * BLOK_BOYUTU), startY + (r * BLOK_BOYUTU), BLOK_BOYUTU - 2, BLOK_BOYUTU - 2);
                 }
             });
         });
+        
+        ctx.shadowBlur = 0; // Gölgeyi sıfırla ki diğerlerini etkilemesin
     });
 }
 
