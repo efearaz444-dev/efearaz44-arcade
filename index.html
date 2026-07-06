@@ -1,24 +1,129 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EFEARAZ44 ARCADE</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <div id="particles-js"></div>
-    <div class="container">
-        <h1>EFEARAZ44 ARCADE</h1>
+
+    <div id="nameModal" class="modal">
+        <div class="modal-content">
+            <h2>Kullanıcı Adı Girin</h2>
+            <p>Skor tablosunda yerinizi almak için bir takma ad seçin.</p>
+            <input type="text" id="usernameInput" placeholder="Kullanıcı adınız..." maxlength="15">
+            <button id="saveNameBtn">Arcade'e Gir</button>
+        </div>
     </div>
 
-    <!-- Kütüphaneler -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <div class="container">
+        <header class="arcade-header">
+            <h1>EFEARAZ44 ARCADE</h1>
+            <p id="welcomeText">🎮 Efearaz44 Arcade'e Hoş geldin!</p>
+            <div class="header-stats">
+                <span class="stat-box">🪙 Altın: <span id="totalGold">0</span></span>
+                <span class="stat-box">⏱️ Süre: <span id="totalTimeDisplay">0s</span></span>
+            </div>
+        </header>
+
+        <div class="top-controls">
+            <button id="startBtn" class="btn-primary">Oyunu Başlat</button>
+            <button id="bgmBtn" class="btn-secondary">🔊 Müzik Aç</button>
+            <button id="shopBtn" class="btn-secondary">🛒 Market</button>
+        </div>
+
+        <nav class="game-selector">
+            <button id="selectSnake" class="active">Yılan (Snake)</button>
+            <button id="selectBrick">Tuğla Kırma</button>
+            <button id="selectSpace">Uzay Savaşı</button>
+            <button id="selectFlappy">Cyber Bird</button>
+            <button id="selectPong">Neon Pong</button>
+            <button id="selectMulti">XOX Multiplayer</button>
+        </nav>
+
+        <main class="main-arena">
+            <aside class="side-panel leaderboard">
+                <h3>🏆 En İyiler</h3>
+                <div class="score-row"><span>👑 Rekor:</span> <span id="allTimeBest">Yükleniyor...</span></div>
+                <hr>
+                <div class="score-row"><span>🐍 Yılan:</span> <span id="snakeBest">0 Puan</span></div>
+                <div class="score-row"><span>🧱 Tuğla:</span> <span id="brickBest">0 Puan</span></div>
+                <div class="score-row"><span>🚀 Uzay:</span> <span id="spaceBest">0 Puan</span></div>
+                <div class="score-row"><span>🛸 Bird:</span> <span id="flappyBest">0 Puan</span></div>
+                <div class="score-row"><span>🔴 Pong:</span> <span id="pongBest">0 Puan</span></div>
+            </aside>
+
+            <section class="game-core">
+                <div class="live-score">Skor: <span id="score">0</span></div>
+                <canvas id="gameCanvas" width="400" height="400"></canvas>
+            </section>
+
+            <aside id="multiplayerPanel" class="side-panel multiplayer hidden">
+                <h3>🌐 XOX Odası</h3>
+                <p id="roomStatus">Bir oda kurun veya koda katılın.</p>
+                <input type="text" id="roomCodeInput" placeholder="Oda Kodu Girin..." maxlength="4">
+                <div class="mp-buttons">
+                    <button id="btnCreateRoom" class="btn-sm">Oda Oluştur</button>
+                    <button id="btnJoinRoom" class="btn-sm">Odaya Katıl</button>
+                </div>
+            </aside>
+
+            <aside id="shopPanel" class="side-panel shop hidden">
+                <h3>🛒 Kostüm Marketi</h3>
+                <div class="shop-item">
+                    <span>🟢 Klasik Yeşil</span>
+                    <button class="skin-btn active" data-skin="classic" data-cost="0">Seçili</button>
+                </div>
+                <div class="shop-item">
+                    <span>🔵 Neon Mavi</span>
+                    <button class="skin-btn" data-skin="blue" data-cost="100">Satın Al (100)</button>
+                </div>
+                <div class="shop-item">
+                    <span>🔴 Siber Kırmızı</span>
+                    <button class="skin-btn" data-skin="red" data-cost="250">Satın Al (250)</button>
+                </div>
+                <div class="shop-item">
+                    <span>🟡 Asil Altın</span>
+                    <button class="skin-btn" data-skin="gold" data-cost="500">Satın Al (500)</button>
+                </div>
+            </aside>
+        </main>
+
+        <footer class="mobile-controls">
+            <div class="control-row">
+                <button id="btnUp" class="arrow-btn">▲</button>
+            </div>
+            <div class="control-row">
+                <button id="btnLeft" class="arrow-btn">◀</button>
+                <button id="btnAction" class="action-btn">FİRE / JUMP</button>
+                <button id="btnRight" class="arrow-btn">▶</button>
+            </div>
+            <div class="control-row">
+                <button id="btnDown" class="arrow-btn">▼</button>
+            </div>
+        </footer>
+</div> <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     
-    <!-- Senin Dosyaların -->
-    <script>particlesJS.load('particles-js', 'https://raw.githubusercontent.com/VincentGarreau/particles.js/master/demo/particles.json');</script>
-    <script src="js/firebase.js"></script>
-    <script src="js/games.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/arcade.js"></script>
+    <script>
+        // Arka plan partikülleri için varsayılan siber konfigürasyon
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 40, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#00ffff" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.2, "random": false },
+                "size": { "value": 3, "random": true },
+                "line_linked": { "enable": true, "distance": 150, "color": "#00ffff", "opacity": 0.15, "width": 1 },
+                "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+            },
+            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false }, "onclick": { "enable": false } } },
+            "retina_detect": true
+        });
+    </script>
+    <script src="./main.js"></script>
 </body>
 </html>
