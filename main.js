@@ -94,6 +94,7 @@ window.onload = function() {
     if(document.getElementById("selectFlappy")) document.getElementById("selectFlappy").addEventListener("click", () => switchGame("flappy"));
     if(document.getElementById("selectPong")) document.getElementById("selectPong").addEventListener("click", () => switchGame("pong"));
     if(document.getElementById("selectMulti")) document.getElementById("selectMulti").addEventListener("click", () => switchGame("multi"));
+    if(document.getElementById("selectBlockblast")) document.getElementById("selectBlockblast").addEventListener("click", () => switchGame("blockblast"));
     if(document.getElementById("shopBtn")) document.getElementById("shopBtn").addEventListener("click", () => { if(shopPanel) shopPanel.classList.toggle("hidden"); });
     if(startBtn) startBtn.addEventListener("click", startActiveGame); if(mobileStartBtn) mobileStartBtn.addEventListener("click", startActiveGame);
     switchGame("snake");
@@ -177,12 +178,18 @@ function switchGame(g) {
     else if (g === "flappy") { if(welcomeText) welcomeText.innerText = "🛸 Neon Cyber Bird"; initFlappy(); }
     else if (g === "pong") { if(welcomeText) welcomeText.innerText = "🔴 Yapay Zekaya Karşı Pong"; initPong(); }
     else if (g === "multi") { if(welcomeText) welcomeText.innerText = "🌐 Multiplayer X-O-X Arenası"; if(mPanel) mPanel.classList.remove("hidden"); initMulti(); }
+    else if (g === "blockblast") { if(welcomeText) welcomeText.innerText = "🟨 Neon Block Blast Arenası"; if(typeof clearCanvas === "function") clearCanvas(); if(typeof drawBlockBlast === "function") drawBlockBlast(); }
 }
 
 function startActiveGame() {
     if (!currentPlayer) return; score = 0; if(scoreElement) scoreElement.innerText = score; isGameRunning = true; isGameWaitingToStart = true; 
     if(startBtn) startBtn.innerText = "Yeniden Başlat"; if(mobileStartBtn) mobileStartBtn.innerText = "Yeniden Başlat";
-    if (activeGame === "snake") { initSnake(); isGameWaitingToStart = false; } else if (activeGame === "brick") initBrick(); else if (activeGame === "space") { spaceWave = 1; initSpace(); isGameWaitingToStart = false; } else if (activeGame === "flappy") initFlappy(); else if (activeGame === "pong") initPong();
+    if (activeGame === "snake") { initSnake(); isGameWaitingToStart = false; } 
+    else if (activeGame === "brick") initBrick(); 
+    else if (activeGame === "space") { spaceWave = 1; initSpace(); isGameWaitingToStart = false; } 
+    else if (activeGame === "flappy") initFlappy(); 
+    else if (activeGame === "pong") initPong();
+    else if (activeGame === "blockblast" && typeof startBlockBlastGame === "function") { startBlockBlastGame(); isGameWaitingToStart = false; }
     clearInterval(gameInterval); gameInterval = setInterval(updateEngine, activeGame === "snake" ? 100 : 1000 / 60);
 }
 
