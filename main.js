@@ -110,7 +110,7 @@ if(saveNameBtn) {
         if (!sifre) return alert("Lütfen hesabınız için bir şifre giriniz iki gözümün çiçeği!");
 
         // Filtre listenin TAMAMI (Tek bir harfe bile dokunulmadı)
-        const yasakliKelimeler = ["31", "otuzbir", "otuz bir", "otuz-bir", "o31", "otuz1", "piç", "pic", "sik", "sg", "sktir", "siktir", "orospu", "orspu", "oç", "oc", "göt", "got", "gto", "amk", "aq", "amq", "am", "yarrak", "yarak", "fuck", "bitch", "sikiş", "sikis", "meme", "daşşak", "dassak", "taşşak", "pezevenk", "pznk", "ibne", "ipne", "orospu cocugu", "orospu çocuğu", "şerefsiz", "serefsiz", "salak", "gerizekalı", "gerizekali", "mal"]; 
+        const yasakliKelimeler = ["31", "otuzbir", "otuz bir", "otuz-bir", "o31", "otuz1", "piç", "pic", "sik", "sg", "sktir", "siktir", "orospu", "orspu", "oç", "oc", "göt", "got", "gto", "amk", "aq", "amq", "am", "yarrak", "yarak", "fuck", "bitch", "sikiş", "sikis", "meme", "daşşak", "dassak", "taşşak", "pezevenk", "pznk", "ibne", "ipne", "orospu cocugu", "orospu çocuğu", "şerefsiz", "serefsiz", "salak", "gerizekalı", "gerizekali", "mal", "aptal", "dangalak", "dangalak", "oç", "oc", "amcık", "amcik", "yarrak", "yarak", "sürtük", "surtuk", "kahpe", "kötü", "kotu", "kötü çocuk", "kotu cocuk"]; 
         const kontrolIsmi = name.toLowerCase().replace(/\s+/g, ''); 
         const yasakliBulundu = yasakliKelimeler.some(kelime => { 
             const temizKelime = kelime.toLowerCase().replace(/\s+/g, ''); 
