@@ -19,6 +19,7 @@ let currentPlayer = ""; let totalGold = parseInt(localStorage.getItem("arc_gold"
 let ownedSkins = JSON.parse(localStorage.getItem("arc_skins")) || ["classic"]; let currentSkin = localStorage.getItem("arc_current_skin") || "classic";
 let arcadeScores = JSON.parse(localStorage.getItem("arc_scores")) || { snake: 0, brick: 0, space: 0, flappy: 0, pong: 0, allTimePlayer: "" };
 
+let yilanHamleKuyrugu = [];
 let snake = []; let food = {x:0, y:0}; let dx = gridSize, dy = 0;
 let paddle = { x: 160, y: 370, width: 90, height: 12, speed: 14 }; let ball = { x: 200, y: 200, radius: 7, dx: 4, dy: -4 }; let bricks = [];
 let playerShip = { x: 180, y: 360, width: 40, height: 20, speed: 9 }; let playerLasers = []; let invaders = []; let invaderDirection = 1; let spaceWave = 1;
@@ -26,7 +27,30 @@ let bird = { x: 50, y: 150, velocity: 0, gravity: 0.5, jump: -7, radius: 10 }; l
 let pongPad = { y: 160, width: 10, height: 80, speed: 8 }; let aiPad = { y: 160, width: 10, height: 80, speed: 3.5 }; let pongBall = { x: 200, y: 200, dx: 4, dy: 3 };
 
 let keysPressed = {};
-window.addEventListener("keydown", e => { keysPressed[e.key] = true; initAudio(); if(isGameWaitingToStart && isGameRunning) { isGameWaitingToStart = false; } });
+window.addEventListener("keydown", e => { 
+    keysPressed[e.key] = true; 
+    initAudio(); 
+    if(isGameWaitingToStart && isGameRunning) { isGameWaitingToStart = false; } 
+
+    const key = e.key.toLowerCase();
+    
+    // Yılan oyunu için hamleleri sıraya diz (Kilitlenmeyi önler)
+    if (activeGame === "snake") {
+        if ((key === "arrowleft" || key === "a") && yilanHamleKuyrugu[yilanHamleKuyrugu.length - 1] !== "SOL") yilanHamleKuyrugu.push("SOL");
+        if ((key === "arrowright" || key === "d") && yilanHamleKuyrugu[yilanHamleKuyrugu.length - 1] !== "SAG") yilanHamleKuyrugu.push("SAG");
+        if ((key === "arrowup" || key === "w") && yilanHamleKuyrugu[yilanHamleKuyrugu.length - 1] !== "YUKARI") yilanHamleKuyrugu.push("YUKARI");
+        if ((key === "arrowdown" || key === "s") && yilanHamleKuyrugu[yilanHamleKuyrugu.length - 1] !== "ASAGI") yilanHamleKuyrugu.push("ASAGI");
+    } else {
+        // Diğer oyunlar için normal anlık tetiklemeler
+        if (key === "arrowleft" || key === "a") moveLeft();
+        if (key === "arrowright" || key === "d") moveRight();
+        if (key === "arrowup" || key === "w") actionKey();
+    }
+
+    if (e.key === " ") { 
+        actionKey();
+    }
+});
 window.addEventListener("keyup", e => { keysPressed[e.key] = false; });
 
 function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -109,7 +133,35 @@ function handleContinuousInput() { if (!isGameRunning) return; if (keysPressed["
 
 // A. YILAN
 function initSnake() { snake = [{x:100,y:100},{x:80,y:100},{x:60,y:100}]; dx=gridSize; dy=0; moveFood(); drawSnake(); }
-function updateSnake() { let head = { x: snake[0].x + dx, y: snake[0].y + dy }; if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || checkSelfCollision(head)) { gameOver(); return; } snake.unshift(head); if (head.x === food.x && head.y === food.y) { score += 10; if(scoreElement) scoreElement.innerText = score; playSound("coin"); addGold(10); moveFood(); } else { snake.pop(); } drawSnake(); }
+function updateSnake() {
+    // Kuyruktaki hamleyi al ve uygula
+    if (yilanHamleKuyrugu.length > 0) {
+        const sonrakiHamle = yilanHamleKuyrugu.shift();
+        if (sonrakiHamle === "SOL" && dx === 0) { dx = -gridSize; dy = 0; }
+        if (sonrakiHamle === "SAG" && dx === 0) { dx = gridSize; dy = 0; }
+        if (sonrakiHamle === "YUKARI" && dy === 0) { dx = 0; dy = -gridSize; }
+        if (sonrakiHamle === "ASAGI" && dy === 0) { dx = 0; dy = gridSize; }
+    }
+
+    // --- BURADAN AŞAĞISI ESKİ KODLARININ AYNISI KALACAK ---
+    let head = { x: snake[0].x + dx, y: snake[0].y + dy }; 
+    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || checkSelfCollision(head)) { 
+        yilanHamleKuyrugu = []; // Oyun bitince kuyruğu sıfırla
+        gameOver(); 
+        return; 
+    } 
+    snake.unshift(head); 
+    if (head.x === food.x && head.y === food.y) { 
+        score += 10; 
+        if(scoreElement) scoreElement.innerText = score; 
+        playSound("coin"); 
+        addGold(10); 
+        moveFood(); 
+    } else { 
+        snake.pop(); 
+    } 
+    drawSnake(); 
+}
 function drawSnake() { clearCanvas(); drawWatermark(); let c = getSkinColors(); snake.forEach((p, i) => { ctx.fillStyle = i===0?c.head:c.body; ctx.fillRect(p.x+1, p.y+1, gridSize-2, gridSize-2); }); ctx.fillStyle = "#ff1744"; ctx.beginPath(); ctx.arc(food.x+10, food.y+10, 8, 0, Math.PI*2); ctx.fill(); }
 
 // B. TUĞLA

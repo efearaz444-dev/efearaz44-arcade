@@ -36,11 +36,23 @@ if (odayaKatilBtn) {
         
         database.ref('odalar/' + girilenKod).once('value', (snapshot) => {
             if (snapshot.exists()) {
-                aktifOdaKod = girilenKod; benimRolum = "O";
+                aktifOdaKod = girilenKod; 
+                benimRolum = "O";
+                
+                // --- PANEL GEÇİŞİ VE EKRAN GÜNCELLEME DESTEĞİ ---
+                if (typeof switchGame === "function") {
+                    switchGame("multi"); 
+                } else {
+                    if (mPanel) mPanel.classList.remove("hidden");
+                    activeGame = "multi";
+                }
+                
                 if(durumYazisi) durumYazisi.innerText = "Odaya Bağlanıldı! Kod: " + aktifOdaKod + ". Sıra X'te.";
                 database.ref('odalar/' + aktifOdaKod).update({ misafirKatildi: true });
                 odayiDizle(aktifOdaKod);
-            } else { alert("Böyle bir oda bulunamadı! Kodu kontrol et."); }
+            } else { 
+                alert("Böyle bir oda bulunamadı! Kodu kontrol et iki gözümün çiçeği."); 
+            }
         });
     });
 }
