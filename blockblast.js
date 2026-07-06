@@ -27,13 +27,16 @@ function startBlockBlastGame() {
     bbPieces = [null, null, null];
     bbSelectedIdx = null;
     
-    // Canvas boyutuna göre hücre boyutunu ayarla
+    // Sırf garanti olsun diye ana projenin bekleme modunu kapatıp oyunu başlatıyoruz
+    isGameWaitingToStart = false; 
+    isGameRunning = true;
+    
     bbCellSize = Math.floor((canvas.width - 40) / BB_GRID);
     
     generateBBPieces();
     drawBlockBlast();
     
-    // Tıklama olayını canvas'a bağla
+    // Tıklamayı dinle
     canvas.onclick = handleBBGridClick;
 }
 
@@ -45,11 +48,34 @@ function generateBBPieces() {
     }
 }
 
-// 3. Ekranı Çizme Motoru (Ana oyun döngüsünden veya manuel çağrılır)
+// Oyunu Sıfırla ve Başlat
+function startBlockBlastGame() {
+    bbBoard = Array(BB_GRID).fill(null).map(() => Array(BB_GRID).fill(0));
+    bbPieces = [null, null, null];
+    bbSelectedIdx = null;
+    
+    // Sırf garanti olsun diye ana projenin bekleme modunu kapatıp oyunu başlatıyoruz
+    isGameWaitingToStart = false; 
+    isGameRunning = true;
+    
+    bbCellSize = Math.floor((canvas.width - 40) / BB_GRID);
+    
+    generateBBPieces();
+    drawBlockBlast();
+    
+    // Tıklamayı dinle
+    canvas.onclick = handleBBGridClick;
+}
+
+// Ekran Çizim Motoru
 function drawBlockBlast() {
     if (activeGame !== "blockblast") return;
-    clearCanvas();
-    drawWatermark();
+    
+    // Önce canvas'ı tamamen temizle
+    ctx.fillStyle = "#0d0e15"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (typeof drawWatermark === "function") drawWatermark();
 
     // --- 8x8 OYUN TAHTASINI ÇİZ ---
     for (let r = 0; r < BB_GRID; r++) {
@@ -58,11 +84,11 @@ function drawBlockBlast() {
             let y = bbOffsetY + r * bbCellSize;
 
             if (bbBoard[r][c]) {
-                ctx.fillStyle = bbBoard[r][c]; // Dolu hücrenin kendi rengi
+                ctx.fillStyle = bbBoard[r][c];
                 ctx.shadowBlur = 8;
                 ctx.shadowColor = bbBoard[r][c];
             } else {
-                ctx.fillStyle = "#1c1f30"; // Boş hücre arka planı
+                ctx.fillStyle = "#1c1f30";
                 ctx.shadowBlur = 0;
             }
             
@@ -73,36 +99,34 @@ function drawBlockBlast() {
             ctx.strokeRect(x + 2, y + 2, bbCellSize - 4, bbCellSize - 4);
         }
     }
-    ctx.shadowBlur = 0; // Gölgeleri sıfırla
+    ctx.shadowBlur = 0;
 
-    // --- ALTAKİ 3 ADET PARÇAYI ÇİZ ---
+// --- ALTAKİ 3 ADET PARÇAYI ÇİZ ---
     let holderWidth = canvas.width / 3;
-    let holderY = bbOffsetY + (BB_GRID * bbCellSize) + 30;
+    let holderY = bbOffsetY + (BB_GRID * bbCellSize) + 15; 
 
-    bbPieces.forEach((piece, index) => {
-        if (!piece) return;
+    for (let i = 0; i < 3; i++) {
+        let piece = bbPieces[i];
+        if (!piece) continue;
 
-        let startX = index * holderWidth + (holderWidth / 2);
+        let startX = i * holderWidth + (holderWidth / 2);
         
-        // Eğer parça seçiliyse etrafına neon bir çember veya efekt çiz
-        if (bbSelectedIdx === index) {
-            ctx.fillStyle = "rgba(0, 176, 255, 0.15)";
+        if (bbSelectedIdx === i) {
+            ctx.fillStyle = "rgba(0, 176, 255, 0.3)";
             ctx.beginPath();
-            ctx.arc(startX, holderY + 30, 45, 0, Math.PI * 2);
+            ctx.arc(startX, holderY + 25, 35, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Parçanın matrisini mini boyutta çiz
-        let miniSize = 15;
+        let miniSize = 12; 
         let pMatrix = piece.matrix;
         let pRows = pMatrix.length;
         let pCols = pMatrix[0].length;
 
-        // Merkezleme hesapları
-        let totalW = pCols * miniSize;
+let totalW = pCols * miniSize;
         let totalH = pRows * miniSize;
         let pX = startX - (totalW / 2);
-        let pY = holderY + 30 - (totalH / 2);
+        let pY = holderY + 25 - (totalH / 2);
 
         for (let r = 0; r < pRows; r++) {
             for (let c = 0; c < pCols; c++) {
@@ -112,13 +136,12 @@ function drawBlockBlast() {
                 }
             }
         }
-    });
+    }
 
-    // Bilgilendirme Yazısı
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "14px sans-serif";
+  ctx.fillStyle = "#ffffff";
+    ctx.font = "12px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Alttaki parçaya tıkla, sonra tahtada koyacağın yere tıkla!", canvas.width / 2, canvas.height - 15);
+    ctx.fillText("Parçaya tıkla, sonra tahtada koyacağın yere tıkla!", canvas.width / 2, canvas.height - 10);
 }
 
 // 4. Tıklama ve Yerleştirme Kontrolleri
