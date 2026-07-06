@@ -4,6 +4,7 @@
 
 // main.js'deki global değişkenleri ve fonksiyonları güvenli şekilde pencereden çekiyoruz
 const getGlobal = (key, fallback = null) => window[key] !== undefined ? window[key] : fallback;
+const auth = window.auth;
 
 function initMulti() {
     if (typeof window.clearCanvas === "function") window.clearCanvas();
