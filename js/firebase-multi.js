@@ -31,9 +31,13 @@ const durumYazisi = document.getElementById("roomStatus");
 if (odaOlusturBtn) {
     odaOlusturBtn.addEventListener("click", () => {
         if (!database) return alert("Firebase bağlantısı hazır değil!");
+        
+        // Kullanıcı giriş yaptıysa ismini al, yoksa "Oyuncu X" yaz
+        let aktifIsim = (typeof currentPlayer !== "undefined" && currentPlayer) ? currentPlayer : "Oyuncu X";
+        
         aktifOdaKod = Math.floor(1000 + Math.random() * 9000).toString(); 
         benimRolum = "X";
-        oyuncuX_Isim = getGlobal("currentPlayer") || "Oyuncu X"; 
+        oyuncuX_Isim = aktifIsim; 
         oyuncuO_Isim = "Bekleniyor...";
         
         if(odaInput) odaInput.value = aktifOdaKod;
@@ -41,6 +45,7 @@ if (odaOlusturBtn) {
         
         const mPanel = document.getElementById("multiplayerPanel");
         if(mPanel) mPanel.classList.remove("hidden");
+        
         window.activeGame = "multi";
         window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
 
@@ -49,7 +54,7 @@ if (odaOlusturBtn) {
             sira: "X", 
             misafirKatildi: false, 
             sonHamle: -1,
-            isimX: oyuncuX_Isim,
+            isimX: oyuncuX_Isim, // Artık senin ismin gidiyor
             isimO: oyuncuO_Isim
         });
         odayiDizle(aktifOdaKod);
@@ -67,7 +72,8 @@ if (odayaKatilBtn) {
             if (snapshot.exists()) {
                 aktifOdaKod = girilenKod; 
                 benimRolum = "O";
-                oyuncuO_Isim = getGlobal("currentPlayer") || "Oyuncu O";
+                // --- İŞTE DEĞİŞİKLİK BURADA ---
+                oyuncuO_Isim = currentPlayer || "Oyuncu O"; // currentPlayer değişkenini direkt kullanıyoruz
                 
                 window.activeGame = "multi";
                 window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
@@ -79,14 +85,13 @@ if (odayaKatilBtn) {
                 const multiBtn = document.getElementById("selectMulti");
                 if(multiBtn) multiBtn.classList.add("active");
                 
-// --- ALT TARAFIN GÜVENLİ HALE GETİRİLMİŞ SÜRÜMÜ ---
                 const welcomeTextEl = document.getElementById("welcomeText");
                 if(welcomeTextEl) welcomeTextEl.innerText = "🌐 Multiplayer X-O-X Arenası";
                 
                 if (database && aktifOdaKod) {
                     database.ref('odalar/' + aktifOdaKod).update({ 
                         misafirKatildi: true,
-                        isimO: oyuncuO_Isim
+                        isimO: oyuncuO_Isim // Buraya artık senin ismin gidiyor
                     }).then(() => {
                         if (typeof odayiDizle === "function") odayiDizle(aktifOdaKod);
                     }).catch(err => console.log("Veri güncellenemedi:", err));
