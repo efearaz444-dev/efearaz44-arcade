@@ -206,17 +206,31 @@ function checkXOXWinner() {
 
 const canvasEl = document.getElementById("gameCanvas");
 if (canvasEl) {
-    canvasEl.addEventListener("click", e => {
+    const handleXOXClick = (clientX, clientY) => {
         if(getGlobal("activeGame") === "multi") {
             let rect = canvasEl.getBoundingClientRect();
-            let x = e.clientX - rect.left; let y = e.clientY - rect.top;
+            // Ölçeklendirme hesabı (mobilde ekran boyutu farklı olabildiği için)
+            let scaleX = canvasEl.width / rect.width;
+            let scaleY = canvasEl.height / rect.height;
+            let x = (clientX - rect.left) * scaleX;
+            let y = (clientY - rect.top) * scaleY;
+            
             let ofs = 40;
             if (y < ofs) return; 
-            let c = Math.floor(x / 133); 
-            let r = Math.floor((y - ofs) / 120); 
+            let c = Math.floor(x / (canvasEl.width / 3)); 
+            let r = Math.floor((y - ofs) / ((canvasEl.height - ofs) / 3)); 
             if(r > 2) r = 2; if(c > 2) c = 2;
             let index = r * 3 + c;
             if(index >= 0 && index <= 8) hamleGonder(index);
         }
-    });
+    };
+
+    // Mouse için
+    canvasEl.addEventListener("click", e => handleXOXClick(e.clientX, e.clientY));
+    
+    // Mobil için (İşte eksik olan parça burası)
+    canvasEl.addEventListener("touchstart", e => {
+        e.preventDefault();
+        handleXOXClick(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
 }
