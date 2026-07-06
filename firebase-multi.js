@@ -1,14 +1,25 @@
 // ============================================================================
-// --- REALTIME FIREBASE MULTIPLAYER XOX MOTORU (İSİM DESTEKLİ) ---
+// --- REALTIME FIREBASE MULTIPLAYER XOX MOTORU (KIRMIZILIKSIZ SÜRÜM) ---
 // ============================================================================
+
+// main.js'deki global değişkenleri ve fonksiyonları güvenli şekilde pencereden çekiyoruz
+const getGlobal = (key, fallback = null) => window[key] !== undefined ? window[key] : fallback;
+
 function initMulti() {
-    clearCanvas(); ctx.fillStyle = "#fff"; ctx.font = "14px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("Çevrimiçi bir odaya katılın veya kurun!", canvas.width/2, canvas.height/2);
+    if (typeof window.clearCanvas === "function") window.clearCanvas();
+    const c = document.getElementById("gameCanvas");
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.font = "14px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("Çevrimiçi bir odaya katılın veya kurun!", c.width/2, c.height/2);
 }
 
+// Global fonksiyona kaydedelim ki main.js çağırabilsin
+window.initMulti = initMulti;
+
 const firebaseConfig = { databaseURL: "https://xox-multiplayer-test-default-rtdb.firebaseio.com/" };
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-const database = firebase.database();
+if (typeof firebase !== "undefined" && !firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+const database = typeof firebase !== "undefined" ? firebase.database() : null;
 
 let aktifOdaKod = null; let benimRolum = null; let mevcutSira = "X";
 let xoxTahta = ["", "", "", "", "", "", "", "", ""];
@@ -21,17 +32,19 @@ const durumYazisi = document.getElementById("roomStatus");
 
 if (odaOlusturBtn) {
     odaOlusturBtn.addEventListener("click", () => {
+        if (!database) return alert("Firebase bağlantısı hazır değil!");
         aktifOdaKod = Math.floor(1000 + Math.random() * 9000).toString(); 
         benimRolum = "X";
-        oyuncuX_Isim = currentPlayer || "Oyuncu X"; // main.js'deki ismi alıyoruz
+        oyuncuX_Isim = getGlobal("currentPlayer") || "Oyuncu X"; 
         oyuncuO_Isim = "Bekleniyor...";
         
         if(odaInput) odaInput.value = aktifOdaKod;
         if(durumYazisi) durumYazisi.innerText = "Oda Kuruldu! Kod: " + aktifOdaKod + ". Arkadaşının girmesi bekleniyor...";
         
+        const mPanel = document.getElementById("multiplayerPanel");
         if(mPanel) mPanel.classList.remove("hidden");
-        activeGame = "multi";
-        score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = score;
+        window.activeGame = "multi";
+        window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
 
         database.ref('odalar/' + aktifOdaKod).set({ 
             tahta: ["", "", "", "", "", "", "", "", ""], 
@@ -47,6 +60,7 @@ if (odaOlusturBtn) {
 
 if (odayaKatilBtn) {
     odayaKatilBtn.addEventListener("click", () => {
+        if (!database) return alert("Firebase bağlantısı hazır değil!");
         if(!odaInput) return;
         const girilenKod = odaInput.value.trim(); 
         if (!girilenKod) return alert("Lütfen geçerli bir oda kodu gir iki gözümün çiçeği!");
@@ -55,24 +69,30 @@ if (odayaKatilBtn) {
             if (snapshot.exists()) {
                 aktifOdaKod = girilenKod; 
                 benimRolum = "O";
-                oyuncuO_Isim = currentPlayer || "Oyuncu O";
+                oyuncuO_Isim = getGlobal("currentPlayer") || "Oyuncu O";
                 
-                activeGame = "multi";
-                score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = score;
+                window.activeGame = "multi";
+                window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
+                
+                const mPanel = document.getElementById("multiplayerPanel");
                 if(mPanel) mPanel.classList.remove("hidden");
                 
                 document.querySelectorAll(".game-selector button").forEach(b => b.classList.remove("active"));
                 const multiBtn = document.getElementById("selectMulti");
                 if(multiBtn) multiBtn.classList.add("active");
                 
-                if(welcomeText) welcomeText.innerText = "🌐 Multiplayer X-O-X Arenası";
+// --- ALT TARAFIN GÜVENLİ HALE GETİRİLMİŞ SÜRÜMÜ ---
+                const welcomeTextEl = document.getElementById("welcomeText");
+                if(welcomeTextEl) welcomeTextEl.innerText = "🌐 Multiplayer X-O-X Arenası";
                 
-                // Kendi ismimizi Firebase'e yazıp odaya dahil oluyoruz
-                database.ref('odalar/' + aktifOdaKod).update({ 
-                    misafirKatildi: true,
-                    isimO: oyuncuO_Isim
-                });
-                odayiDizle(aktifOdaKod);
+                if (database && aktifOdaKod) {
+                    database.ref('odalar/' + aktifOdaKod).update({ 
+                        misafirKatildi: true,
+                        isimO: oyuncuO_Isim
+                    }).then(() => {
+                        if (typeof odayiDizle === "function") odayiDizle(aktifOdaKod);
+                    }).catch(err => console.log("Veri güncellenemedi:", err));
+                }
             } else { 
                 alert("Böyle bir oda bulunamadı! Kodu kontrol et iki gözümün çiçeği."); 
             }
@@ -81,6 +101,8 @@ if (odayaKatilBtn) {
 }
 
 function odayiDizle(roomCode) {
+    if (!database) return;
+    database.ref('odalar/' + roomCode).off();
     database.ref('odalar/' + roomCode).on('value', (snapshot) => {
         const data = snapshot.val(); 
         if (!data) return;
@@ -100,38 +122,51 @@ function odayiDizle(roomCode) {
 }
 
 function drawXOX() {
-    clearCanvas(); ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
+    if (typeof window.clearCanvas === "function") window.clearCanvas();
+    const c = document.getElementById("gameCanvas");
+    if (!c) return;
+    const ctx = c.getContext("2d");
     
-    // XOX Çizgileri (Üstte isim alanı bırakmak için biraz aşağı kaydırdık)
-    let ofs = 40; // Ofset kayması
+    ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
+    let ofs = 40; 
     for(let i=1; i<3; i++) {
-        ctx.beginPath(); ctx.moveTo(i*133, ofs); ctx.lineTo(i*133, canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, ofs + i*120); ctx.lineTo(canvas.width, ofs + i*120); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i*133, ofs); ctx.lineTo(i*133, c.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, ofs + i*120); ctx.lineTo(c.width, ofs + i*120); ctx.stroke();
     }
     
-    // Tepedeki Janti Canlı Skor/İsim Tablosu (Canvas İçi)
+// --- ÜST TARAFIN GÜVENLİ HALE GETİRİLMİŞ SÜRÜMÜ ---
+    const cEl = document.getElementById("gameCanvas");
+    const canWidth = cEl ? cEl.width : 400; 
+    
     ctx.fillStyle = "rgba(255,255,255,0.07)";
-    ctx.fillRect(0, 0, canvas.width, ofs);
+    ctx.fillRect(0, 0, canWidth, ofs);
     ctx.font = "bold 13px sans-serif";
     ctx.textAlign = "left"; ctx.fillStyle = "#00b0ff"; ctx.fillText("  " + oyuncuX_Isim + " (X)", 10, ofs/2 + 4);
-    ctx.textAlign = "right"; ctx.fillStyle = "#ff1744"; ctx.fillText(oyuncuO_Isim + " (O)  ", canvas.width - 10, ofs/2 + 4);
-    ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.fillText("VS", canvas.width/2, ofs/2 + 4);
+    ctx.textAlign = "right"; ctx.fillStyle = "#ff1744"; ctx.fillText(oyuncuO_Isim + " (O)  ", canWidth - 10, ofs/2 + 4);
+    ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.fillText("VS", canWidth/2, ofs/2 + 4);
 
-    // Taşların Çizimi
-    xoxTahta.forEach((val, index) => {
+    // --- TAŞLARIN ÇİZİMİ (KIRMIZILIKSIZ DÖNGÜ) ---
+    const aktifTahta = (typeof xoxTahta !== "undefined" && Array.isArray(xoxTahta)) ? xoxTahta : ["", "", "", "", "", "", "", "", ""];
+    
+    aktifTahta.forEach((val, index) => {
         if(!val) return;
-        let r = Math.floor(index / 3); let c = index % 3;
-        let x = c * 133 + 66; 
+        let r = Math.floor(index / 3); 
+        let cIndex = index % 3;
+        let x = cIndex * 133 + 66; 
         let y = ofs + r * 120 + 60;
-        ctx.font = "bold 45px Arial"; ctx.fillStyle = val === "X" ? "#00b0ff" : "#ff1744";
-        ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(val, x, y);
+        
+        ctx.font = "bold 45px Arial"; 
+        ctx.fillStyle = val === "X" ? "#00b0ff" : "#ff1744";
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "middle"; 
+        ctx.fillText(val, x, y);
     });
 }
 
 function hamleGonder(index) {
-    if (!aktifOdaKod || mevcutSira !== benimRolum || xoxTahta[index] !== "") return;
+    if (!database || !aktifOdaKod || mevcutSira !== benimRolum || xoxTahta[index] !== "") return;
     xoxTahta[index] = benimRolum;
-    playSound("dink");
+    if (typeof window.playSound === "function") window.playSound("dink");
     const sonrakiSira = (benimRolum === "X") ? "O" : "X";
     database.ref('odalar/' + aktifOdaKod).update({ tahta: xoxTahta, sira: sonrakiSira, sonHamle: index });
 }
@@ -142,9 +177,9 @@ function checkXOXWinner() {
         if(xoxTahta[w[0]] && xoxTahta[w[0]] === xoxTahta[w[1]] && xoxTahta[w[0]] === xoxTahta[w[2]]) {
             let kazananIsim = xoxTahta[w[0]] === "X" ? oyuncuX_Isim : oyuncuO_Isim;
             alert("Oyun Bitti! Kazanan Muazzam Oyuncu: " + kazananIsim);
-            if(xoxTahta[w[0]] === benimRolum) addGold(100);
+            if(xoxTahta[w[0]] === benimRolum && typeof window.addGold === "function") window.addGold(100);
             if(durumYazisi) durumYazisi.innerText = "Oyun bitti! Yeni oda açabilirsiniz.";
-            database.ref('odalar/' + aktifOdaKod).off();
+            if (database) database.ref('odalar/' + aktifOdaKod).off();
             aktifOdaKod = null;
             return true;
         }
@@ -152,23 +187,26 @@ function checkXOXWinner() {
     if(xoxTahta.filter(v => v === "").length === 0 && aktifOdaKod !== null) {
         alert("Yenişemediniz, Berabere!");
         if(durumYazisi) durumYazisi.innerText = "Berabere bitti! Yeni oda açabilirsiniz.";
-        database.ref('odalar/' + aktifOdaKod).off();
+        if (database) database.ref('odalar/' + aktifOdaKod).off();
         aktifOdaKod = null;
         return true;
     }
     return false;
 }
 
-canvas.addEventListener("click", e => {
-    if(activeGame === "multi") {
-        let rect = canvas.getBoundingClientRect();
-        let x = e.clientX - rect.left; let y = e.clientY - rect.top;
-        let ofs = 40;
-        if (y < ofs) return; // İsim alanına tıklayınca hamle yapmasın
-        let c = Math.floor(x / 133); 
-        let r = Math.floor((y - ofs) / 120); 
-        if(r > 2) r = 2; if(c > 2) c = 2;
-        let index = r * 3 + c;
-        if(index >= 0 && index <= 8) hamleGonder(index);
-    }
-});
+const canvasEl = document.getElementById("gameCanvas");
+if (canvasEl) {
+    canvasEl.addEventListener("click", e => {
+        if(getGlobal("activeGame") === "multi") {
+            let rect = canvasEl.getBoundingClientRect();
+            let x = e.clientX - rect.left; let y = e.clientY - rect.top;
+            let ofs = 40;
+            if (y < ofs) return; 
+            let c = Math.floor(x / 133); 
+            let r = Math.floor((y - ofs) / 120); 
+            if(r > 2) r = 2; if(c > 2) c = 2;
+            let index = r * 3 + c;
+            if(index >= 0 && index <= 8) hamleGonder(index);
+        }
+    });
+}
