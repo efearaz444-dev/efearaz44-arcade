@@ -114,8 +114,17 @@ function odayiDizle(roomCode) {
         drawXOX();
         
         if (data.misafirKatildi && durumYazisi && roomCode === aktifOdaKod) { 
-            let siraMetni = (benimRolum === mevcutSira) ? 'SENİN SIRAN' : 'RAKİBİN SIRASI';
-            durumYazisi.innerHTML = `<span style="color: #00b0ff">${oyuncuX_Isim} (X)</span> <strong style="color: #fff">VS</strong> <span style="color: #ff1744">${oyuncuO_Isim} (O)</span><br><br>Sıra: <b>${mevcutSira}</b> oyuncusunda. (${siraMetni})`; 
+            // X veya O yerine kimin sırasıysa direkt onun ismini seçiyoruz
+            let aktifOyuncuIsmi = (mevcutSira === "X") ? oyuncuX_Isim : oyuncuO_Isim;
+            let siraMetni = (benimRolum === mevcutSira) ? 'SENİN SIRAN!' : 'RAKİBİN SIRASI...';
+            
+            durumYazisi.innerHTML = `
+                <span style="color: #00b0ff; font-weight: bold;">${oyuncuX_Isim}</span> 
+                <strong style="color: #fff">VS</strong> 
+                <span style="color: #ff1744; font-weight: bold;">${oyuncuO_Isim}</span>
+                <br><br>
+                Sıra: <b style="color: #ffca28">${aktifOyuncuIsmi}</b> kullanıcısında. (${siraMetni})
+            `; 
         }
         checkXOXWinner();
     });
@@ -175,17 +184,20 @@ function checkXOXWinner() {
     let wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     for (let w of wins) {
         if(xoxTahta[w[0]] && xoxTahta[w[0]] === xoxTahta[w[1]] && xoxTahta[w[0]] === xoxTahta[w[2]]) {
+            // Kazanan harfe göre direkt ismi çekiyoruz
             let kazananIsim = xoxTahta[w[0]] === "X" ? oyuncuX_Isim : oyuncuO_Isim;
-            alert("Oyun Bitti! Kazanan Muazzam Oyuncu: " + kazananIsim);
+            
+            alert("👑 Oyun Bitti! Kazanan: " + kazananIsim);
+            
             if(xoxTahta[w[0]] === benimRolum && typeof window.addGold === "function") window.addGold(100);
-            if(durumYazisi) durumYazisi.innerText = "Oyun bitti! Yeni oda açabilirsiniz.";
+            if(durumYazisi) durumYazisi.innerText = "Oyun bitti! Kazanan: " + kazananIsim + ". Yeni oda açabilirsiniz.";
             if (database) database.ref('odalar/' + aktifOdaKod).off();
             aktifOdaKod = null;
             return true;
         }
     }
     if(xoxTahta.filter(v => v === "").length === 0 && aktifOdaKod !== null) {
-        alert("Yenişemediniz, Berabere!");
+        alert("🤝 Yenişemediniz, Berabere!");
         if(durumYazisi) durumYazisi.innerText = "Berabere bitti! Yeni oda açabilirsiniz.";
         if (database) database.ref('odalar/' + aktifOdaKod).off();
         aktifOdaKod = null;
