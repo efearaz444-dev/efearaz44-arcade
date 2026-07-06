@@ -193,10 +193,37 @@ function startActiveGame() {
     clearInterval(gameInterval); gameInterval = setInterval(updateEngine, activeGame === "snake" ? 100 : 1000 / 60);
 }
 
-function updateEngine() { if (isGameWaitingToStart) { drawWaitingScreen(); return; } handleContinuousInput(); if (activeGame === "snake") updateSnake(); else if (activeGame === "brick") updateBrick(); else if (activeGame === "space") updateSpace(); else if (activeGame === "flappy") updateFlappy(); else if (activeGame === "pong") updatePong(); }
-function drawWaitingScreen() { if (activeGame === "flappy") drawFlappy(); else if (activeGame === "brick") drawBrick(); else if (activeGame === "pong") drawPong(); ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#00b0ff"; ctx.font = "bold 16px Arial"; ctx.textAlign = "center"; ctx.fillText("HAZIR! BAŞLAMAK İÇİN AŞAĞIDAKİ", canvas.width / 2, canvas.height / 2 - 15); ctx.fillText("BUTONLARA DOKUNUN VEYA ZIPLAYIN", canvas.width / 2, canvas.height / 2 + 15); }
-function handleContinuousInput() { if (!isGameRunning) return; if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) moveLeft(); if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) moveRight(); }
+function updateEngine() { 
+    if (isGameWaitingToStart) { drawWaitingScreen(); return; } 
+    handleContinuousInput(); 
+    if (activeGame === "snake") updateSnake(); 
+    else if (activeGame === "brick") updateBrick(); 
+    else if (activeGame === "space") updateSpace(); 
+    else if (activeGame === "flappy") updateFlappy(); 
+    else if (activeGame === "pong") updatePong(); 
+    else if (activeGame === "blockblast") { if(typeof drawBlockBlast === "function") drawBlockBlast(); }
+}
 
+function drawWaitingScreen() { 
+    if (activeGame === "flappy") drawFlappy(); 
+    else if (activeGame === "brick") drawBrick(); 
+    else if (activeGame === "pong") drawPong(); 
+    else if (activeGame === "blockblast") { if(typeof drawBlockBlast === "function") drawBlockBlast(); }
+    
+    ctx.fillStyle = "rgba(0,0,0,0.4)"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height); 
+    ctx.fillStyle = "#00b0ff"; 
+    ctx.font = "bold 16px Arial"; 
+    ctx.textAlign = "center"; 
+    ctx.fillText("HAZIR! BAŞLAMAK İÇİN AŞAĞIDAKİ", canvas.width / 2, canvas.height / 2 - 15); 
+    ctx.fillText("BUTONLARA DOKUNUN VEYA ZIPLAYIN", canvas.width / 2, canvas.height / 2 + 15); 
+}
+
+function handleContinuousInput() { 
+    if (!isGameRunning) return; 
+    if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) moveLeft(); 
+    if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) moveRight(); 
+}
 // A. YILAN
 function initSnake() { snake = [{x:100,y:100},{x:80,y:100},{x:60,y:100}]; dx=gridSize; dy=0; moveFood(); drawSnake(); }
 function updateSnake() {
