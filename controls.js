@@ -100,12 +100,24 @@ if (bDown) {
 if (bAction) { 
     bAction.addEventListener("touchstart", (e) => { 
         e.preventDefault(); 
-        if(activeGame === "space") {
-            mobilDonguBaslat(actionKey); // Uzayda basılı tutunca aralıksız tarasın
+        // actionKey tanımlı mı ve bir fonksiyon mu diye kontrol ediyoruz (Kilitlenmeyi önler)
+        if (typeof actionKey === 'function') {
+            if(activeGame === "space") {
+                mobilDonguBaslat(actionKey); // Uzayda basılı tutunca aralıksız tarasın
+            } else {
+                actionKey();
+            }
         } else {
+            console.warn("Aksiyon tuşu (actionKey) şu anki oyun için henüz tanımlanmamış.");
+        }
+    }); 
+    
+    bAction.addEventListener("touchend", mobilDonguDurdur);
+    
+    bAction.addEventListener("click", () => {
+        // Tıklama yapıldığında da çökmemesi için güvenli kontrol ekledik
+        if (typeof actionKey === 'function') {
             actionKey();
         }
     }); 
-    bAction.addEventListener("touchend", mobilDonguDurdur);
-    bAction.addEventListener("click", actionKey); 
 }
