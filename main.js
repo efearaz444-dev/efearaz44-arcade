@@ -76,38 +76,46 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Google Giriş Fonksiyonu
-function googleIleGiris() {
-    try {
-        if (typeof firebase === 'undefined' || !firebase.auth) {
-            alert("Hata: Firebase Auth kütüphanesi henüz yüklenmedi veya eksik!");
-            return;
-        }
+// ============================================================================
+// --- FIREBASE GOOGLE & E-POSTA GİRİŞ SİSTEMİ ---
+// ============================================================================
 
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        firebase.auth().signInWithPopup(provider)
-            .then((result) => {
+// Google ile yönlendirmeli (Redirect) giriş fonksiyonu
+function googleIleGiris() {
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        alert("Hata: Firebase Auth kütüphanesi henüz yüklenmedi veya eksik!");
+        return;
+    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // Popup engellerini ve hata kodunu aşmak için yönlendirme (Redirect) başlattık
+    firebase.auth().signInWithRedirect(provider);
+}
+
+// SAYFA HER YÜKLENDİĞİNDE: Google yönlendirmesinden geri dönüşü kontrol et ve kullanıcıyı kaydet
+if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().getRedirectResult()
+        .then((result) => {
+            if (result.user) {
                 const user = result.user;
                 
+                // Kullanıcıyı veritabanında 'users' klasörüne UID ile güvenli şekilde güncelle
                 database.ref('users/' + user.uid).update({
                     username: user.email.split('@')[0],
                     lastLogin: new Date().toLocaleDateString()
                 }).then(() => {
-                    console.log("Kullanıcı veritabanına başarıyla senkronize edildi.");
+                    console.log("Google kullanıcısı başarıyla veritabanına senkronize edildi.");
                 }).catch((dbError) => {
                     console.error("Veritabanı yazma hatası:", dbError);
                 });
-
-            })
-            .catch((error) => {
+            }
+        })
+        .catch((error) => {
+            // "operation-not-allowed" hatasını sessizce yut, diğer ciddi hataları ekrana bas
+            if (error.code !== "auth/operation-not-allowed") {
                 console.error("Firebase Auth Detaylı Hata:", error);
                 alert("Giriş Yapılamadı!\nKod: " + error.code + "\nMesaj: " + error.message);
-            });
-
-    } catch (globalError) {
-        alert("Kod çalıştırma esnasında bir hata oluştu: " + globalError.message);
-    }
+            }
+        });
 }
 
 // Klasik E-posta/Şifre ile Giriş veya Kayıt
@@ -127,7 +135,7 @@ function girisYapVeyaKaydol() {
     auth.signInWithEmailAndPassword(email, passwordInput)
         .catch((error) => {
             // Hesap yoksa otomatik kayıt et
-            if (error.code === "auth/user-not-found") {
+            if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
                 auth.createUserWithEmailAndPassword(email, passwordInput)
                     .then((result) => {
                         database.ref('users/' + result.user.uid).set({
