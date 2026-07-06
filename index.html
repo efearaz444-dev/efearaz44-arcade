@@ -133,25 +133,28 @@
 <script>
     particlesJS('particles-js', {
         "particles": {
-            "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+            "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
             "color": { "value": "#ffffff" },
             "shape": { "type": "circle" },
-            "opacity": { "value": 0.5, "random": false },
-            "size": { "value": 3, "random": true }, // Boyutu 3'e düşürdük, artık devasa olmayacaklar!
+            "opacity": { "value": 0.3, "random": true },
+            "size": { 
+                "value": 2, // Boyutları sabitledik, asla büyümeyecekler
+                "random": false 
+            },
             "line_linked": { 
                 "enable": true, 
-                "distance": 150, 
+                "distance": 120, 
                 "color": "#ffffff", 
-                "opacity": 0.4, 
-                "width": 1 // Çizgileri DNA sarmalı gibi incecik yaptık
+                "opacity": 0.25, 
+                "width": 1 
             },
-            "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+            "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
         },
         "interactivity": {
-            "detect_on": "canvas",
-            "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }
+            "detect_on": "window", // Canvas yerine window yaparak kaymayı engelledik
+            "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }
         },
-        "retina_detect": true
+        "retina_detect": false // İşte büyümesini engelleyen asıl ayar bu!
     });
 </script>
 </body>
