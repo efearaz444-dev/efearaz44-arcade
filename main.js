@@ -78,15 +78,36 @@ auth.onAuthStateChanged((user) => {
 
 // Google Giriş Fonksiyonu
 function googleIleGiris() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then((result) => {
-        const user = result.user;
-        // İlk kez giriyorsa users altına temel yapıyı oluştur
-        database.ref('users/' + user.uid).update({
-            username: user.email.split('@')[0],
-            lastLogin: new Date().toLocaleDateString()
-        });
-    }).catch((error) => alert("Giriş Hatası: " + error.message));
+    try {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            alert("Hata: Firebase Auth kütüphanesi henüz yüklenmedi veya eksik!");
+            return;
+        }
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+                const user = result.user;
+                
+                database.ref('users/' + user.uid).update({
+                    username: user.email.split('@')[0],
+                    lastLogin: new Date().toLocaleDateString()
+                }).then(() => {
+                    console.log("Kullanıcı veritabanına başarıyla senkronize edildi.");
+                }).catch((dbError) => {
+                    console.error("Veritabanı yazma hatası:", dbError);
+                });
+
+            })
+            .catch((error) => {
+                console.error("Firebase Auth Detaylı Hata:", error);
+                alert("Giriş Yapılamadı!\nKod: " + error.code + "\nMesaj: " + error.message);
+            });
+
+    } catch (globalError) {
+        alert("Kod çalıştırma esnasında bir hata oluştu: " + globalError.message);
+    }
 }
 
 // Klasik E-posta/Şifre ile Giriş veya Kayıt
