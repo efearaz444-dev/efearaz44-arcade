@@ -242,7 +242,12 @@ function handleContinuousInput() {
 // --- MAUSE & DOKUNMA HABERLEŞMESİ ---
 function setupCanvasClicks() {
     const handleAction = (clientX, clientY, isStart) => {
-        // Oyun başlamadıysa bile tıklamayı kabul et (özellikle XOX/Start için)
+        // --- BURASI KRİTİK: Oyun başlamadıysa başlat! ---
+        if (isGameWaitingToStart) {
+            isGameRunning = true;
+            isGameWaitingToStart = false;
+        }
+        
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
@@ -258,11 +263,12 @@ function setupCanvasClicks() {
             if(isDrawing) garticStrokes.push({ x, y, color: getSkinColors().head, type: isStart ? 'start' : 'draw' });
             drawGartic();
         } else if (activeGame === "multi") {
-            // BURASI ÇOK ÖNEMLİ: 
-            // Eğer senin XOX oyununda tıklamayı yöneten fonksiyonun adı 
-            // 'handleMultiClick' değilse, buradaki ismi ona göre değiştir!
+            // XOX tıklaması için fonksiyonunu buraya yaz (örneğin handleMultiClick)
+            // Eğer fonksiyonun adı farklıysa onu yaz
             if (typeof handleMultiClick === 'function') {
                 handleMultiClick(x, y);
+            } else if (typeof xoxClick === 'function') {
+                xoxClick(x, y);
             }
         }
     };
