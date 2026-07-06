@@ -81,32 +81,43 @@ auth.onAuthStateChanged((user) => {
 // ============================================================================
 
 // Google ile küçük pencere (Popup) açarak giriş yapma fonksiyonu
+// Google ile Giriş Fonksiyonu (Kurşun Geçirmez Son Sürüm)
 function googleIleGiris() {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-        alert("Hata: Firebase Auth kütüphanesi henüz yüklenmedi veya eksik!");
+    // Tarayıcı konsoluna tıklandığını kesin olarak bas ki çalıştığını görelim
+    console.log("Google butonuna tıklandı, fonksiyon tetiklendi!");
+
+    // Projedeki auth nesnesini veya firebase auth nesnesini hangisi varsa yakala
+    let firebaseAuth;
+    if (typeof auth !== 'undefined') {
+        firebaseAuth = auth;
+    } else if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebaseAuth = firebase.auth();
+    } else {
+        alert("Kritik Hata: Firebase Auth sistemi projenizde hiç bulunamadı!");
         return;
     }
-    
+
     const provider = new firebase.auth.GoogleAuthProvider();
     
-    // Güvenli şekilde küçük giriş penceresini tetikliyoruz
-    firebase.auth().signInWithPopup(provider)
+    // Popup penceresini zorla açtırıyoruz
+    firebaseAuth.signInWithPopup(provider)
         .then((result) => {
             const user = result.user;
+            console.log("Giriş Başarılı:", user.email);
             
-            // Giriş yapan kullanıcıyı veritabanında 'users' altına UID ile eşitliyoruz
+            // Kullanıcı verilerini Realtime Database'e güvenle yaz
             database.ref('users/' + user.uid).update({
                 username: user.email.split('@')[0],
                 lastLogin: new Date().toLocaleDateString()
             }).then(() => {
-                console.log("Google kullanıcısı başarıyla veritabanına kaydedildi.");
-            }).catch((dbError) => {
-                console.error("Veritabanı yazma hatası:", dbError);
+                console.log("Kullanıcı veritabanına senkronize edildi.");
+                // Eğer modal açıksa burada otomatik kapatabilirsin
             });
         })
         .catch((error) => {
-            console.error("Firebase Auth Detaylı Hata:", error);
-            alert("Giriş Yapılamadı!\nKod: " + error.code + "\nMesaj: " + error.message);
+            console.error("Firebase Detaylı Giriş Hatası:", error);
+            // İşte gizlenen tüm hataları (popup engeli dahil) burası ekrana fırlatacak!
+            alert("Google Giriş Hatası!\nKod: " + error.code + "\nMesaj: " + error.message);
         });
 }
 
