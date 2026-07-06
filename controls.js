@@ -10,6 +10,11 @@ const bAction = document.getElementById("btnAction");
 let mobilHareketInterval = null;
 const MOBIL_HIZ_DONGUSU_MS = 45; // Basılı tuttuğunda ne kadar hızlı tekrarlayacağı (Düşük sayı = Daha hızlı)
 
+// Oyun değişkenlerini en tepeye tanımlayalım
+let dx = 0;
+let dy = 0;
+const gridSize = 20; // Yılanın bir birimlik boyutu (eğer farklıysa kendi kodundakiyle aynı yap)
+
 // --- MOBİL ÖZEL HAREKET FONKSİYONLARI ---
 // main.js içindeki moveLeft ve moveRight fonksiyonlarını ezmeden mobil hızı katlıyoruz
 function mobilMoveLeft() {

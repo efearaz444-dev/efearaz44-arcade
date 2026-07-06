@@ -108,28 +108,35 @@ async function girisYapVeyaKaydol() {
     const emailInput = document.getElementById("usernameInput").value.trim();
     const passwordInput = document.getElementById("passwordInput").value.trim();
 
-    if (!emailInput || !passwordInput) return alert("Lütfen alanları doldur!");
+    if (!emailInput || !passwordInput) return alert("Kullanıcı adı ve şifre girmelisin!");
 
+    // E-posta formatına çevir
     const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
 
     try {
-        // 1. Önce giriş yapmayı dene
+        // Önce giriş yapmayı dene
         await auth.signInWithEmailAndPassword(email, passwordInput);
+        console.log("Giriş başarılı!");
         location.reload();
     } catch (error) {
-        // 2. Eğer kullanıcı yoksa kayıt olmayı dene
-        if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+        // Hata alırsak (hesap yoksa veya şifre yanlışsa) buraya düşer
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
             try {
-                const result = await auth.createUserWithEmailAndPassword(email, passwordInput);
-                // Yeni kullanıcıyı veritabanına ekle
-                database.ref('users/' + result.user.uid).set({
+                // Hesap yoksa yeni oluştur
+                const userCredential = await auth.createUserWithEmailAndPassword(email, passwordInput);
+                
+                // --- KRİTİK ADIM: Veritabanına kayıt ---
+                await database.ref('users/' + userCredential.user.uid).set({
                     username: emailInput,
                     gold: 0,
-                    created_at: new Date().toLocaleDateString()
+                    score: 0,
+                    created_at: new Date().toISOString()
                 });
+                
+                console.log("Yeni hesap oluşturuldu ve veritabanına eklendi.");
                 location.reload();
             } catch (kayitHata) {
-                alert("Kayıt Olunamadı: " + kayitHata.message);
+                alert("Kayıt olunamadı: " + kayitHata.message);
             }
         } else {
             alert("Giriş Hatası: " + error.message);
