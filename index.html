@@ -13,7 +13,9 @@
         <div class="modal-content">
             <h2>Kullanıcı Adı Girin</h2>
             <p>Skor tablosunda yerinizi almak için bir takma ad seçin.</p>
-            <input type="text" id="usernameInput" placeholder="Kullanıcı adınız..." maxlength="15">
+  <input type="text" id="usernameInput" placeholder="Kullanıcı adı girin..." value="">
+
+  <input type="password" id="passwordInput" placeholder="Şifrenizi girin..." style="margin-top: 10px; width: 100%; padding: 10px; background: #000; border: 1px solid #fff; color: #fff; border-radius: 5px;">
             <button id="saveNameBtn">Arcade'e Gir</button>
         </div>
     </div>
@@ -127,8 +129,13 @@
             "retina_detect": true
         });
     </script>
-    <script src="main.js"></script>
-    <script src="firebase-multi.js"></script>
-    <script src="controls.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="controls.js"></script>
+<script src="js/firebase-multi.js"></script>
+
+<script src="main.js"></script>
 </body>
 </html>

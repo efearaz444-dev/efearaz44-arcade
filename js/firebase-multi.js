@@ -17,9 +17,7 @@ function initMulti() {
 // Global fonksiyona kaydedelim ki main.js çağırabilsin
 window.initMulti = initMulti;
 
-const firebaseConfig = { databaseURL: "https://ucretsiz-oyun-sitem-default-rtdb.firebaseio.com/" };
-if (typeof firebase !== "undefined" && !firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-const database = typeof firebase !== "undefined" ? firebase.database() : null;
+const database = window.database || (typeof firebase !== "undefined" ? firebase.database() : null);
 
 let aktifOdaKod = null; let benimRolum = null; let mevcutSira = "X";
 let xoxTahta = ["", "", "", "", "", "", "", "", ""];

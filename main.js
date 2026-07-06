@@ -101,11 +101,70 @@ window.onload = function() {
 
 if(saveNameBtn) {
     saveNameBtn.addEventListener("click", () => {
-        let name = usernameInput.value.trim(); if (!name) return alert("Geçerli bir isim yazmalısın!");
+        let name = usernameInput.value.trim(); 
+        if (!name) return alert("Geçerli bir isim yazmalısın!");
+        
+        // HTML'e eklediğimiz şifre inputunu çekiyoruz
+        const passwordInput = document.getElementById("passwordInput");
+        let sifre = passwordInput ? passwordInput.value.trim() : "";
+        if (!sifre) return alert("Lütfen hesabınız için bir şifre giriniz iki gözümün çiçeği!");
+
+        // Filtre listenin TAMAMI (Tek bir harfe bile dokunulmadı)
         const yasakliKelimeler = ["31", "otuzbir", "otuz bir", "otuz-bir", "o31", "otuz1", "piç", "pic", "sik", "sg", "sktir", "siktir", "orospu", "orspu", "oç", "oc", "göt", "got", "gto", "amk", "aq", "amq", "am", "yarrak", "yarak", "fuck", "bitch", "sikiş", "sikis", "meme", "daşşak", "dassak", "taşşak", "pezevenk", "pznk", "ibne", "ipne", "orospu cocugu", "orospu çocuğu", "şerefsiz", "serefsiz", "salak", "gerizekalı", "gerizekali", "mal"]; 
-        const kontrolIsmi = name.toLowerCase().replace(/\s+/g, ''); const yasakliBulundu = yasakliKelimeler.some(kelime => { const temizKelime = kelime.toLowerCase().replace(/\s+/g, ''); return kontrolIsmi.includes(temizKelime); });
-        if (yasakliBulundu) { alert("Lütfen düzgün bir kullanıcı adı giriniz! 🚫"); usernameInput.value = ""; return; }
-        currentPlayer = name; localStorage.setItem("arc_username", name); if(nameModal) nameModal.style.display = "none"; if(welcomeText) welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
+        const kontrolIsmi = name.toLowerCase().replace(/\s+/g, ''); 
+        const yasakliBulundu = yasakliKelimeler.some(kelime => { 
+            const temizKelime = kelime.toLowerCase().replace(/\s+/g, ''); 
+            return kontrolIsmi.includes(temizKelime); 
+        });
+        
+        if (yasakliBulundu) { 
+            alert("Lütfen düzgün bir kullanıcı adı giriniz! 🚫"); 
+            usernameInput.value = ""; 
+            if(passwordInput) passwordInput.value = "";
+            return; 
+        }
+
+        // --- FIREBASE GÜVENLİ HESAP SİSTEMİ ---
+        if (typeof firebase !== "undefined") {
+            const db = firebase.database();
+            
+            // Firebase'de bu kullanıcı adını aratıyoruz
+            db.ref('kullanicilar/' + name).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    // Kullanıcı zaten var, şifreyi doğrula
+                    const dbSifre = snapshot.val().sifre;
+                    if (dbSifre === sifre) {
+                        // Şifre doğru -> Giriş Yap
+                        currentPlayer = name; 
+                        localStorage.setItem("arc_username", name); 
+                        if(nameModal) nameModal.style.display = "none"; 
+                        if(welcomeText) welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
+                        alert("Giriş Başarılı! Tekrar hoş geldin iki gözümün çiçeği.");
+                    } else {
+                        // Şifre yanlış -> Engelle
+                        alert("Bu kullanıcı adı başkası tarafından alınmış ve girdiğin şifre hatalı kral! Başka bir isim seç veya şifreni kontrol et.");
+                    }
+                } else {
+                    // Kullanıcı yok -> Sıfırdan Kayıt Aç
+                    db.ref('kullanicilar/' + name).set({
+                        sifre: sifre,
+                        kayitTarihi: new Date().toLocaleDateString()
+                    }).then(() => {
+                        currentPlayer = name; 
+                        localStorage.setItem("arc_username", name); 
+                        if(nameModal) nameModal.style.display = "none"; 
+                        if(welcomeText) welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
+                        alert("Hesabın başarıyla oluşturuldu kral! Arcade dünyasına hoş geldin.");
+                    });
+                }
+            });
+        } else {
+            // Firebase yüklenemezse sistem çökmesin diye eski lokal mantık (Güvenlik Önlemi)
+            currentPlayer = name; 
+            localStorage.setItem("arc_username", name); 
+            if(nameModal) nameModal.style.display = "none"; 
+            if(welcomeText) welcomeText.innerText = `🎮 Hoş geldin, ${currentPlayer}!`;
+        }
     });
 }
 
