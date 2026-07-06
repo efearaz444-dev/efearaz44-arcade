@@ -290,7 +290,7 @@ function drawBlockBlast() {
     clearCanvas(); 
     drawWatermark();
     
-    // 1. İZGARAYI ÇİZ (Sola dayalı, alanı genişlettik)
+    // 1. İZGARAYI ÇİZ (Sola dayalı)
     for (let r = 0; r < BB_ROWS; r++) {
         for (let c = 0; c < BB_COLS; c++) {
             ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
@@ -303,24 +303,26 @@ function drawBlockBlast() {
     }
     
     // 2. SAĞ TARAFTAKİ DİKEY PANEL
-    // Paneli sağ tarafa (300px'den başlatıp) dikey çiziyoruz
-    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-    ctx.fillRect(300, 20, 90, 440); 
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
+    ctx.fillRect(320, 20, 70, 440); // Sağ kenara dikey panel
     
-    // 3. BLOKLARI SAĞ SÜTUNA DİKEY DİZ
+    // 3. BLOKLARI SAĞA DİKEY DİZ
     bbAvailableShapes.forEach((shape, index) => {
         if (!shape) return;
         
-        let startX = 320; // Sağ taraftan başlat
-        let startY = 40 + (index * 130); // Her birini dikeyde 130px arayla diz
+        let startX = 330; // Canvas'ın sağ tarafı
+        let startY = 40 + (index * 130); // Dikey dizilim (tıklamalar da buraya göre güncellenmeli!)
         
-        // ELDE TUTMA EFEKTİ (Sarı kutu sağdaki sütunda)
+        // ELDE TUTMA EFEKTİ (Sarı kutu artık sağda)
         if (index === bbSelectedShapeIndex) {
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 10;
             ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 3;
-            // Kutuyu blokların tam etrafına çiz
-            ctx.strokeRect(startX - 10, startY - 10, 70, 90); 
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startX - 5, startY - 5, 50, 90); 
             ctx.lineWidth = 1;
+        } else {
+            ctx.shadowBlur = 0;
         }
         
         // Blok parçaları
@@ -328,10 +330,12 @@ function drawBlockBlast() {
             row.forEach((val, c) => {
                 if (val === 1) {
                     ctx.fillStyle = shape.color;
-                    ctx.fillRect(startX + c * 20, startY + r * 20, 18, 18);
+                    ctx.fillRect(startX + (c * 15), startY + (r * 15), 13, 13);
                 }
             });
         });
+        
+        ctx.shadowBlur = 0;
     });
 }
 
