@@ -80,74 +80,61 @@ auth.onAuthStateChanged((user) => {
 // --- FIREBASE GOOGLE & E-POSTA GİRİŞ SİSTEMİ (SORUNSUZ POPUP MODU) ---
 // ============================================================================
 // Google ile Giriş Fonksiyonu (Tam Uyumlu Son Sürüm)
+// --- DÜZELTİLMİŞ GOOGLE GİRİŞ ---
 function googleIleGiris() {
-    console.log("Google butonuna tıklandı, fonksiyon tetiklendi!");
-
-    // Global auth nesnesini kontrol et
-    if (!window.auth) {
-        alert("Hata: Firebase Auth sistemi henüz hazır değil!");
-        return;
-    }
+    const auth = window.auth;
+    if (!auth) return alert("Firebase Auth hazır değil!");
 
     const provider = new firebase.auth.GoogleAuthProvider();
-    
-    // Küçük pencereyi (Popup) tetikle
-    window.auth.signInWithPopup(provider)
+    auth.signInWithPopup(provider)
         .then((result) => {
-            const user = result.user;
-            console.log("Giriş Başarılı:", user.email);
-            
-            // Veritabanına senkronize et
-            if (window.database) {
-                window.database.ref('users/' + user.uid).update({
-                    username: user.email.split('@')[0],
-                    lastLogin: new Date().toLocaleDateString()
-                }).then(() => {
-                    console.log("Kullanıcı veritabanına kaydedildi.");
-                    location.reload(); // Giriş başarılı olunca sayfayı yenile
-                });
-            } else {
-                location.reload();
-            }
+            location.reload(); 
         })
         .catch((error) => {
-            console.error("Firebase Giriş Hatası:", error);
-            alert("Google Giriş Hatası!\nKod: " + error.code + "\nMesaj: " + error.message);
-        });
-}
-
-// Klasik E-posta/Şifre ile Giriş veya Kayıt
-function girisYapVeyaKaydol() {
-    const emailInput = document.getElementById("usernameInput").value.trim();
-    const passwordInput = document.getElementById("passwordInput").value.trim();
-
-    if (!emailInput || !passwordInput) {
-        alert("Lütfen tüm alanları doldurun!");
-        return;
-    }
-
-    // Kullanıcı adı girdiyse Firebase'in kabul etmesi için e-posta formatına çeviriyoruz
-    const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
-
-    // Önce hesaba giriş yapmayı dene
-    auth.signInWithEmailAndPassword(email, passwordInput)
-        .catch((error) => {
-            // Eğer böyle bir hesap henüz yoksa otomatik olarak yeni kayıt oluştur
-            if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
-                auth.createUserWithEmailAndPassword(email, passwordInput)
-                    .then((result) => {
-                        database.ref('users/' + result.user.uid).set({
-                            username: emailInput,
-                            gold: 0,
-                            totalTime: 0,
-                            created_at: new Date().toLocaleDateString()
-                        });
-                    })
-                    .catch((err) => alert("Kayıt Hatası: " + err.message));
+            console.error("Google Giriş Hatası:", error);
+            // Eğer pop-up engellendiyse redirect (yönlendirme) kullan
+            if (error.code === 'auth/popup-blocked') {
+                auth.signInWithRedirect(provider);
             } else {
                 alert("Giriş Hatası: " + error.message);
             }
         });
+}
+
+// --- DÜZELTİLMİŞ E-POSTA/ŞİFRE GİRİŞ ---
+async function girisYapVeyaKaydol() {
+    const auth = window.auth;
+    const database = window.database;
+    const emailInput = document.getElementById("usernameInput").value.trim();
+    const passwordInput = document.getElementById("passwordInput").value.trim();
+
+    if (!emailInput || !passwordInput) return alert("Lütfen alanları doldur!");
+
+    const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
+
+    try {
+        // 1. Önce giriş yapmayı dene
+        await auth.signInWithEmailAndPassword(email, passwordInput);
+        location.reload();
+    } catch (error) {
+        // 2. Eğer kullanıcı yoksa kayıt olmayı dene
+        if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+            try {
+                const result = await auth.createUserWithEmailAndPassword(email, passwordInput);
+                // Yeni kullanıcıyı veritabanına ekle
+                database.ref('users/' + result.user.uid).set({
+                    username: emailInput,
+                    gold: 0,
+                    created_at: new Date().toLocaleDateString()
+                });
+                location.reload();
+            } catch (kayitHata) {
+                alert("Kayıt Olunamadı: " + kayitHata.message);
+            }
+        } else {
+            alert("Giriş Hatası: " + error.message);
+        }
+    }
 }
 
 // ============================================================================
