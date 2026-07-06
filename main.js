@@ -290,51 +290,54 @@ function drawBlockBlast() {
     clearCanvas(); 
     drawWatermark();
     
-    // 1. İZGARAYI ÇİZ (Sola dayalı)
+    // 1. OYUN ALANI (GRID) - Biraz yukarı kaydırdık
+    const BB_GRID_TOP = 20; 
     for (let r = 0; r < BB_ROWS; r++) {
         for (let c = 0; c < BB_COLS; c++) {
             ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-            ctx.strokeRect(BB_OFFSET_X + c * BB_CELL_SIZE, BB_OFFSET_Y + r * BB_CELL_SIZE, BB_CELL_SIZE, BB_CELL_SIZE);
+            ctx.strokeRect(BB_OFFSET_X + c * BB_CELL_SIZE, BB_GRID_TOP + r * BB_CELL_SIZE, BB_CELL_SIZE, BB_CELL_SIZE);
             if (bbGrid[r][c] !== 0) {
                 ctx.fillStyle = bbGrid[r][c];
-                ctx.fillRect(BB_OFFSET_X + c * BB_CELL_SIZE + 2, BB_OFFSET_Y + r * BB_CELL_SIZE + 2, BB_CELL_SIZE - 4, BB_CELL_SIZE - 4);
+                ctx.fillRect(BB_OFFSET_X + c * BB_CELL_SIZE + 2, BB_GRID_TOP + r * BB_CELL_SIZE + 2, BB_CELL_SIZE - 4, BB_CELL_SIZE - 4);
             }
         }
     }
     
-    // 2. SAĞ TARAFTAKİ DİKEY PANEL
-    ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
-    ctx.fillRect(320, 20, 70, 440); // Sağ kenara dikey panel
+    // 2. BLOK SEÇME PANELİ - Alt tarafta temiz bir alan
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; 
+    ctx.fillRect(0, 370, canvas.width, 110);
     
-    // 3. BLOKLARI SAĞA DİKEY DİZ
+    // 3. BLOKLARI ÇİZ (KÜÇÜLTÜLMÜŞ)
+    const BLOK_BOYUTU = 14; // Blokları 14px'e küçülttük
+    
     bbAvailableShapes.forEach((shape, index) => {
         if (!shape) return;
         
-        let startX = 330; // Canvas'ın sağ tarafı
-        let startY = 40 + (index * 130); // Dikey dizilim (tıklamalar da buraya göre güncellenmeli!)
+        // Blokların yatay dağılımı (index * 110)
+        let startX = 50 + index * 110; 
+        let startY = 390; 
         
-        // ELDE TUTMA EFEKTİ (Sarı kutu artık sağda)
+        // ELDE TUTMA EFEKTİ (Sarı kutu - Tıklama koordinatı burası!)
         if (index === bbSelectedShapeIndex) {
             ctx.shadowColor = '#ffd700';
             ctx.shadowBlur = 10;
             ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(startX - 5, startY - 5, 50, 90); 
+            ctx.lineWidth = 3;
+            ctx.strokeRect(startX - 10, startY - 10, 80, 70); 
             ctx.lineWidth = 1;
         } else {
             ctx.shadowBlur = 0;
         }
         
-        // Blok parçaları
+        // Blokların kendisini çiz
         shape.matrix.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val === 1) {
                     ctx.fillStyle = shape.color;
-                    ctx.fillRect(startX + (c * 15), startY + (r * 15), 13, 13);
+                    ctx.fillRect(startX + (c * BLOK_BOYUTU), startY + (r * BLOK_BOYUTU), BLOK_BOYUTU - 2, BLOK_BOYUTU - 2);
                 }
             });
         });
-        
         ctx.shadowBlur = 0;
     });
 }
