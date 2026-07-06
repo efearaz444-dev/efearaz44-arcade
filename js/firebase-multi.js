@@ -33,7 +33,7 @@ if (odaOlusturBtn) {
         if (!database) return alert("Firebase bağlantısı hazır değil!");
         
         // Kullanıcı giriş yaptıysa ismini al, yoksa "Oyuncu X" yaz
-        let aktifIsim = (typeof currentPlayer !== "undefined" && currentPlayer) ? currentPlayer : "Oyuncu X";
+let aktifIsim = (auth && auth.currentUser) ? auth.currentUser.email.split('@')[0] : "Misafir";
         
         aktifOdaKod = Math.floor(1000 + Math.random() * 9000).toString(); 
         benimRolum = "X";
@@ -49,13 +49,14 @@ if (odaOlusturBtn) {
         window.activeGame = "multi";
         window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
 
-        database.ref('odalar/' + aktifOdaKod).set({ 
+         database.ref('odalar/' + aktifOdaKod).set({ 
             tahta: ["", "", "", "", "", "", "", "", ""], 
             sira: "X", 
             misafirKatildi: false, 
             sonHamle: -1,
-            isimX: oyuncuX_Isim, // Artık senin ismin gidiyor
-            isimO: oyuncuO_Isim
+            // Giriş yapmamışsa veritabanına da "Misafir" olarak gitsin
+            isimX: aktifIsim, 
+            isimO: "Bekleniyor..."
         });
         odayiDizle(aktifOdaKod);
     });
@@ -73,7 +74,7 @@ if (odayaKatilBtn) {
                 aktifOdaKod = girilenKod; 
                 benimRolum = "O";
                 // --- İŞTE DEĞİŞİKLİK BURADA ---
-                oyuncuO_Isim = currentPlayer || "Oyuncu O"; // currentPlayer değişkenini direkt kullanıyoruz
+                oyuncuO_Isim = (auth.currentUser) ? auth.currentUser.email.split('@')[0] : "Oyuncu O"; // currentUser değişkenini direkt kullanıyoruz
                 
                 window.activeGame = "multi";
                 window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
