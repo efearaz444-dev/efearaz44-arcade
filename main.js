@@ -290,7 +290,7 @@ function drawBlockBlast() {
     clearCanvas(); 
     drawWatermark();
     
-    // 1. İZGARAYI ÇİZ
+    // 1. İZGARAYI ÇİZ (Sola dayalı, alanı genişlettik)
     for (let r = 0; r < BB_ROWS; r++) {
         for (let c = 0; c < BB_COLS; c++) {
             ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
@@ -302,50 +302,36 @@ function drawBlockBlast() {
         }
     }
     
-    // 2. ALTTAKİ BLOK PANELİNİ ÇİZ
-    ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; 
-    ctx.fillRect(0, 370, canvas.width, 110);
+    // 2. SAĞ TARAFTAKİ DİKEY PANEL
+    // Paneli sağ tarafa (300px'den başlatıp) dikey çiziyoruz
+    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.fillRect(300, 20, 90, 440); 
     
-    // 3. SEÇİLEBİLİR PARÇALARI ÇİZ
-    const BLOK_BOYUTU = 14; 
-    const PANEL_GENISLIGI = canvas.width;
-    
+    // 3. BLOKLARI SAĞ SÜTUNA DİKEY DİZ
     bbAvailableShapes.forEach((shape, index) => {
         if (!shape) return;
         
-        // Bloğun matrix boyutlarına göre dinamik hesaplama
-        let matrixW = shape.matrix[0].length * BLOK_BOYUTU;
-        let matrixH = shape.matrix.length * BLOK_BOYUTU;
+        let startX = 320; // Sağ taraftan başlat
+        let startY = 40 + (index * 130); // Her birini dikeyde 130px arayla diz
         
-        // startX: Bloğu ilgili alana tam ortalar
-        let startX = (PANEL_GENISLIGI / 3) * index + (PANEL_GENISLIGI / 6) - (matrixW / 2);
-        // startY: 380px olarak sabitlendi, böylece 3-4 birimlik bloklar kesilmez
-        let startY = 380; 
-        
-        // ELDE TUTMA EFEKTİ (Seçiliyse Parlat)
+        // ELDE TUTMA EFEKTİ (Sarı kutu sağdaki sütunda)
         if (index === bbSelectedShapeIndex) {
-            ctx.shadowColor = '#ffd700';
-            ctx.shadowBlur = 10;
             ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 2;
-            // Çerçeveyi bloğun tam etrafına çizdiriyoruz
-            ctx.strokeRect(startX - 6, startY - 6, matrixW + 12, matrixH + 12);
+            ctx.lineWidth = 3;
+            // Kutuyu blokların tam etrafına çiz
+            ctx.strokeRect(startX - 10, startY - 10, 70, 90); 
             ctx.lineWidth = 1;
-        } else {
-            ctx.shadowBlur = 0;
         }
         
-        // Blok parçalarını çiz
+        // Blok parçaları
         shape.matrix.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val === 1) {
                     ctx.fillStyle = shape.color;
-                    ctx.fillRect(startX + (c * BLOK_BOYUTU), startY + (r * BLOK_BOYUTU), BLOK_BOYUTU - 2, BLOK_BOYUTU - 2);
+                    ctx.fillRect(startX + c * 20, startY + r * 20, 18, 18);
                 }
             });
         });
-        
-        ctx.shadowBlur = 0; // Gölgeyi mutlaka sıfırla
     });
 }
 
