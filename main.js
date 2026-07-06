@@ -303,28 +303,28 @@ function drawBlockBlast() {
     }
     
     // 2. ALTTAKİ BLOK PANELİNİ ÇİZ
-    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-    ctx.fillRect(10, 370, canvas.width - 20, 100);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; 
+    ctx.fillRect(0, 370, canvas.width, 110);
     
-    // 3. SEÇİLEBİLİR PARÇALARI ÇİZ (Dinamik ve Sığabilir)
-    const BLOK_BOYUTU = 16; // Küçük bloklar ki sığsın
-    const PANEL_BASLANGIC_X = 50; 
-    const ARALIK = 110;     // Blok grupları arası mesafe
+    // 3. SEÇİLEBİLİR PARÇALARI ÇİZ
+    const BLOK_BOYUTU = 14; // Blokları 14'e çekerek sığmama payını sıfırladık
+    const PANEL_GENISLIGI = canvas.width;
     
     bbAvailableShapes.forEach((shape, index) => {
         if (!shape) return;
         
-        let startX = PANEL_BASLANGIC_X + (index * ARALIK);
-        let startY = 390;
+        // Bloğun matrix genişliğine göre merkezleme hesabı
+        let matrixW = shape.matrix[0].length * BLOK_BOYUTU;
+        let startX = (PANEL_GENISLIGI / 3) * index + (PANEL_GENISLIGI / 6) - (matrixW / 2);
+        let startY = 390; // Blokları yukarı çektik ki aşağıda yer kalsın
         
-        // ELDE TUTMA EFEKTİ (Seçiliyse Parlat)
+        // ELDE TUTMA EFEKTİ
         if (index === bbSelectedShapeIndex) {
             ctx.shadowColor = '#ffd700';
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 12;
             ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 3;
-            // Bloğun etrafına seçildiğini belli eden çerçeve
-            ctx.strokeRect(startX - 10, startY - 10, 80, 60);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startX - 5, startY - 5, matrixW + 10, (shape.matrix.length * BLOK_BOYUTU) + 10);
             ctx.lineWidth = 1;
         } else {
             ctx.shadowBlur = 0;
@@ -340,7 +340,7 @@ function drawBlockBlast() {
             });
         });
         
-        ctx.shadowBlur = 0; // Gölgeyi sıfırla ki diğerlerini etkilemesin
+        ctx.shadowBlur = 0;
     });
 }
 
