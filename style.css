@@ -346,3 +346,20 @@ canvas {
     max-width: 100%; /* Mobilde taşmasın */
     height: auto;    /* En boy oranını korusun */
 }
+#shapeContainer {
+    width: 400px; /* Canvas genişliğinle aynı olmalı */
+    height: 100px; /* Bloklar için yeterli alan */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    border-radius: 0 0 8px 8px;
+    border: 2px solid #1a1a24;
+    overflow: visible; /* Kesilmeyi engellemek için */
+}
+
+/* Oyun menüsünün mobilde altına kayması için */
+.game-selector {
+    padding: 10px;
+    margin-bottom: 20px;
+}
