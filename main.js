@@ -277,7 +277,7 @@ function startActiveGame() {
     clearInterval(gameInterval); 
     const singleDrawGames = ["blockblast", "gartic", "neondraw", "chess", "gridout", "multixox"];
     if(!singleDrawGames.includes(activeGame)) {
-        gameInterval = setInterval(updateEngine, activeGame === "snake" ? 100 : 1000 / 120);
+    gameInterval = setInterval(updateEngine, (activeGame === "snake" ? 100 : (activeGame === "snake_vs" ? 130 : 1000 / 60)));
     } else {
         updateEngine();
     }
