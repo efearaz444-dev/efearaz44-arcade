@@ -598,3 +598,62 @@ document.querySelectorAll(".skin-btn").forEach(btn => {
     const timeDisplayElement = document.getElementById("totalTimeDisplay"); if (timeDisplayElement) { timeDisplayElement.innerText = zamanFormatla(toplamSaniye); }
     setInterval(() => { toplamSaniye++; localStorage.setItem("arcade_total_time", toplamSaniye); if (timeDisplayElement) { timeDisplayElement.innerText = zamanFormatla(toplamSaniye); } }, 1000);
 })();
+// ============================================================================
+// --- YENİ 10 KİŞİLİK LİDERLİK TABLOSU MOTORU ---
+// ============================================================================
+function loadRealtimeLeaderboard(game) {
+    const leaderContainer = document.querySelector(".en-iyiler-listesi") || document.getElementById("leaderboardContainer");
+    if (!leaderContainer) return;
+
+    let defaultScores = {
+        snake: [150, 130, 110, 90, 80, 70, 60, 50, 40, 30],
+        brick: [800, 700, 650, 500, 450, 400, 350, 300, 250, 200],
+        space: [1200, 1000, 900, 800, 750, 600, 500, 400, 300, 200],
+        flappy: [45, 38, 30, 25, 20, 18, 15, 12, 8, 5],
+        pong: [300, 250, 200, 180, 150, 130, 110, 90, 70, 50],
+        blast: [2500, 2000, 1800, 1500, 1200, 1000, 900, 800, 700, 500],
+        dino: [800, 700, 600, 500, 400, 350, 300, 250, 200, 150],
+        catch: [500, 450, 400, 350, 300, 260, 210, 180, 150, 100],
+        xox: [500, 400, 350, 300, 250, 200, 150, 100, 80, 50]
+    };
+
+    let players = [
+        "EfeAraz44", "ARAZ44", "UCHAİ", "Besiktas_1903", 
+        "L_Messi", "Roblox_Dev", "Matrixsever", "Asistan_Bayer", 
+        "Cey_06", "Misafir_Gamer"
+    ];
+
+    let currentScores = defaultScores[game] || [0,0,0,0,0,0,0,0,0,0];
+    let finalLeaderboard = [];
+    for(let i = 0; i < 10; i++) {
+        finalLeaderboard.push({ name: players[i], score: currentScores[i] });
+    }
+
+    if (window.score > 0) {
+        finalLeaderboard.push({ name: "Sen (Mevcut)", score: window.score });
+        finalLeaderboard.sort((a, b) => b.score - a.score);
+        finalLeaderboard = finalLeaderboard.slice(0, 10);
+    }
+
+    let htmlContent = "";
+    finalLeaderboard.forEach((player, index) => {
+        let color = "#ccc"; 
+        let fontWeight = "normal";
+        let prefix = `${index + 1}. `;
+
+        if (index === 0) { color = "#ffca28"; fontWeight = "bold"; prefix = "👑 "; } 
+        else if (index === 1) { color = "#e0e0e0"; fontWeight = "bold"; } 
+        else if (index === 2) { color = "#cd7f32"; fontWeight = "bold"; } 
+        
+        if (player.name === "Sen (Mevcut)") { color = "#00e676"; fontWeight = "bold"; } 
+
+        htmlContent += `
+            <div style="display:flex; justify-content:space-between; padding:5px 8px; font-size:13px; color:${color}; font-weight:${fontWeight};">
+                <span>${prefix}${player.name}</span>
+                <span>${player.score} Puan</span>
+            </div>
+        `;
+    });
+
+    leaderContainer.innerHTML = htmlContent;
+}
