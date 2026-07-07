@@ -77,63 +77,54 @@ auth.onAuthStateChanged((user) => {
 });
 
 // ============================================================================
-// --- FIREBASE GOOGLE & E-POSTA GİRİŞ SİSTEMİ (SORUNSUZ POPUP MODU) ---
+// --- FIREBASE GOOGLE & E-POSTA GİRİŞ SİSTEMİ (SORUNSUZ MOD) ---
 // ============================================================================
-// Google ile Giriş Fonksiyonu (Tam Uyumlu Son Sürüm)
-// --- DÜZELTİLMİŞ GOOGLE GİRİŞ ---
-function googleIleGiris() {
-    const auth = window.auth;
-    if (!auth) return alert("Firebase Auth hazır değil!");
+
+window.googleIleGiris = () => {
+    // window.auth nesnesinin yüklendiğinden emin oluyoruz
+    if (!window.auth) return alert("Firebase henüz başlatılmadı, lütfen biraz bekle.");
 
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .then((result) => {
-            location.reload(); 
-        })
+    window.auth.signInWithPopup(provider)
+        .then(() => location.reload())
         .catch((error) => {
-            console.error("Google Giriş Hatası:", error);
-            // Eğer pop-up engellendiyse redirect (yönlendirme) kullan
             if (error.code === 'auth/popup-blocked') {
-                auth.signInWithRedirect(provider);
+                window.auth.signInWithRedirect(provider);
             } else {
-                alert("Giriş Hatası: " + error.message);
+                alert("Google Giriş Hatası: " + error.message);
             }
         });
-}
+};
 
-// --- DÜZELTİLMİŞ E-POSTA/ŞİFRE GİRİŞ ---
-async function girisYapVeyaKaydol() {
+window.girisYapVeyaKaydol = async () => {
+    // Nesneleri global window üzerinden güvenli çekiyoruz
     const auth = window.auth;
     const database = window.database;
+    
+    if (!auth || !database) return alert("Firebase bağlantısı bekleniyor...");
+
     const emailInput = document.getElementById("usernameInput").value.trim();
     const passwordInput = document.getElementById("passwordInput").value.trim();
 
     if (!emailInput || !passwordInput) return alert("Kullanıcı adı ve şifre girmelisin!");
 
-    // E-posta formatına çevir
     const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
 
     try {
-        // Önce giriş yapmayı dene
         await auth.signInWithEmailAndPassword(email, passwordInput);
-        console.log("Giriş başarılı!");
         location.reload();
     } catch (error) {
-        // Hata alırsak (hesap yoksa veya şifre yanlışsa) buraya düşer
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        // Yeni Firebase sürümlerinde hata kodları değişebiliyor, yakalamayı genişlettik
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
             try {
-                // Hesap yoksa yeni oluştur
                 const userCredential = await auth.createUserWithEmailAndPassword(email, passwordInput);
                 
-                // --- KRİTİK ADIM: Veritabanına kayıt ---
                 await database.ref('users/' + userCredential.user.uid).set({
                     username: emailInput,
                     gold: 0,
                     score: 0,
                     created_at: new Date().toISOString()
                 });
-                
-                console.log("Yeni hesap oluşturuldu ve veritabanına eklendi.");
                 location.reload();
             } catch (kayitHata) {
                 alert("Kayıt olunamadı: " + kayitHata.message);
@@ -142,7 +133,7 @@ async function girisYapVeyaKaydol() {
             alert("Giriş Hatası: " + error.message);
         }
     }
-}
+};
 
 // ============================================================================
 // --- VERİTABANI YAZMA & OKUMA İŞLEMLERİ ---

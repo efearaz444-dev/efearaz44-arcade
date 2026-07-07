@@ -10,11 +10,11 @@ const firebaseConfig = {
     measurementId: "G-LQKP79GEVM"
 };
 
-// Firebase'i başlatıyoruz
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+// Firebase başlatma
+if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Global olarak auth ve database nesnelerini tanımlıyoruz
-window.auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
-window.database = typeof firebase !== 'undefined' ? firebase.database() : null;
+// Nesneleri hemen global yap
+window.auth = firebase.auth();
+window.database = firebase.database();
