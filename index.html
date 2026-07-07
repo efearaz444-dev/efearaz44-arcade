@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EFEARAZ44 ARCADE</title>
     <link rel="stylesheet" href="./style.css">
-    <!-- Firebase Auth Kütüphanesi Eklendi -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
     <div id="particles-js"></div>
 
-    <!-- GÜNCEL GİRİŞ/KAYIT MODALI -->
     <div id="nameModal" class="modal" style="display:flex;">
         <div class="modal-content">
             <h2>Arcade'e Hoş Geldin</h2>
@@ -34,7 +31,6 @@
             </div>
         </header>
 
-        <!-- Diğer bölümlerin aynı kalıyor -->
         <div class="top-controls">
             <button id="startBtn" class="btn-primary">Oyunu Başlat</button>
             <button id="bgmBtn" class="btn-secondary">🔊 Müzik Aç</button>
@@ -122,42 +118,44 @@
         </footer>
     </div> 
 
-    <!-- Firebase ve Oyun Scriptleri -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<script src="js/firebase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 
-<script src="controls.js" defer></script>
-<script src="js/firebase-multi.js" defer></script>
-<script src="main.js" defer></script>
-<script>
-    particlesJS('particles-js', {
-        "particles": {
-            "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
-            "color": { "value": "#ffffff" },
-            "shape": { "type": "circle" },
-            "opacity": { "value": 0.3, "random": true },
-            "size": { 
-                "value": 2, // Boyutları sabitledik, asla büyümeyecekler
-                "random": false 
+    <script src="js/firebase-config.js"></script>
+
+    <script src="controls.js" defer></script>
+    <script src="js/firebase-multi.js" defer></script>
+    <script src="main.js" defer></script>
+
+    <script>
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.3, "random": true },
+                "size": { 
+                    "value": 2, 
+                    "random": false 
+                },
+                "line_linked": { 
+                    "enable": true, 
+                    "distance": 120, 
+                    "color": "#ffffff", 
+                    "opacity": 0.25, 
+                    "width": 1 
+                },
+                "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
             },
-            "line_linked": { 
-                "enable": true, 
-                "distance": 120, 
-                "color": "#ffffff", 
-                "opacity": 0.25, 
-                "width": 1 
+            "interactivity": {
+                "detect_on": "window", 
+                "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }
             },
-            "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
-        },
-        "interactivity": {
-            "detect_on": "window", // Canvas yerine window yaparak kaymayı engelledik
-            "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }
-        },
-        "retina_detect": false // İşte büyümesini engelleyen asıl ayar bu!
-    });
-</script>
+            "retina_detect": false 
+        });
+    </script>
 </body>
 </html>
