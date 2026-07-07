@@ -468,4 +468,47 @@ document.getElementById("selectDino")?.addEventListener("click", () => switchGam
 document.getElementById("selectCatch")?.addEventListener("click", () => switchGame("catch"));
 document.getElementById("selectMulti")?.addEventListener("click", () => switchGame("xox"));
 
+async function girisYapVeyaKaydol() {
+    const emailInput = document.getElementById("usernameInput").value.trim();
+    const passwordInput = document.getElementById("passwordInput").value.trim();
+
+    if (!emailInput || !passwordInput) return alert("Bilgileri gir!");
+    const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
+
+    try {
+        await firebase.auth().signInWithEmailAndPassword(email, passwordInput);
+        location.reload();
+    } catch (error) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            try {
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, passwordInput);
+                await firebase.database().ref('users/' + userCredential.user.uid).set({
+                    username: emailInput,
+                    gold: 0,
+                    snake_best: 0
+                });
+                location.reload();
+            } catch (kayitHata) {
+                alert("Kayıt olunamadı: " + kayitHata.message);
+            }
+        } else {
+            alert("Hata: " + error.message);
+        }
+    }
+}
+
+// ============================================================================
+// --- 6. GİRİŞ YAP & KAYIT OL BUTONLARININ GERİ BAĞLANMASI ---
+// ============================================================================
+const loginBtn = document.getElementById("loginBtn") || document.getElementById("girisBtn");
+if (loginBtn) {
+    loginBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (typeof girisYapVeyaKaydol === "function") {
+            girisYapVeyaKaydol();
+        } else {
+            console.error("girisYapVeyaKaydol fonksiyonu bulunamadı! HTML veya diğer script dosyalarını kontrol et.");
+        }
+    });
+}
 switchGame("snake");
