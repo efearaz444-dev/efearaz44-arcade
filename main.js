@@ -1,4 +1,10 @@
 // ============================================================================
+// --- FIREBASE NESNE GARANTİSİ (EN ÜSTE ALINDI) ---
+// ============================================================================
+const auth = window.auth || firebase.auth();
+const database = window.database || firebase.database();
+
+// ============================================================================
 // --- GLOBAL DEĞİŞKENLER & AYARLAR ---
 // ============================================================================
 let activeGame = "snake"; 
@@ -96,30 +102,40 @@ window.googleIleGiris = () => {
 };
 
 window.girisYapVeyaKaydol = async () => {
-    const auth = window.auth;
-    const database = window.database;
-    
     if (!auth || !database) return alert("Firebase bağlantısı bekleniyor...");
 
-    const emailInput = document.getElementById("usernameInput").value.trim();
+    let emailInput = document.getElementById("usernameInput").value.trim();
     const passwordInput = document.getElementById("passwordInput").value.trim();
 
     if (!emailInput || !passwordInput) return alert("Kullanıcı adı ve şifre girmelisin!");
+    if (passwordInput.length < 6) return alert("Güvenlik nedeniyle şifreniz en az 6 karakter olmalıdır!");
 
-    // Kullanıcı adını Firebase'in kabul edeceği güvenli e-posta formatına zorluyoruz
-    const email = emailInput.includes("@") ? emailInput : `${emailInput.toLowerCase()}@arcade.com`;
+    // TÜRKÇE KARAKTERLERİ VE GEÇERSİZ SEMBOLLERİ TEMİZLEME (400 HATASI KORUMASI)
+    emailInput = emailInput
+        .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+        .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+        .replace(/I/g, 'i').replace(/Ğ/g, 'g').replace(/Ü/g, 'u')
+        .replace(/Ş/g, 's').replace(/Ö/g, 'o').replace(/Ç/g, 'c')
+        .replace(/[^a-zA-Z0-9]/g, ''); // Sadece düz harf ve sayı bırakır
+
+    if (emailInput.length < 3) return alert("Kullanıcı adı çok kısa veya geçersiz karakterler içeriyor!");
+
+    // Kesinlikle Firebase standartlarına uygun sahte e-posta üretiyoruz
+    const email = `${emailInput.toLowerCase()}@arcade.com`;
 
     try {
-        // Önce girilen bilgilerle giriş yapmayı deniyoruz
+        // Önce giriş yapmayı deniyoruz
         await auth.signInWithEmailAndPassword(email, passwordInput);
         location.reload();
     } catch (error) {
-        // Eğer kullanıcı bulunamadıysa ya da yeni kimlik doğrulama hatası döndüyse yeni kayıt açıyoruz
+        console.log("Giriş başarısız, yeni kayıt açılıyor... Hata kodu:", error.code);
+        
+        // Kullanıcı yoksa veya şifre uyuşmazlığı yeni kayıtsa kayıt yapıyoruz
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, passwordInput);
                 
-                // Realtime veritabanına varsayılan oyuncu şablonunu yazıyoruz
+                // Realtime veritabanına yeni oyuncu şablonu yazılıyor
                 await database.ref('users/' + userCredential.user.uid).set({
                     username: emailInput,
                     gold: 0,
@@ -134,7 +150,7 @@ window.girisYapVeyaKaydol = async () => {
                 });
                 location.reload();
             } catch (kayitHata) {
-                alert("Kayıt olunamadı (Şifreniz en az 6 karakter olmalıdır): " + kayitHata.message);
+                alert("Kayıt olunamadı: " + kayitHata.message);
             }
         } else {
             alert("Giriş Hatası: " + error.message);
@@ -146,13 +162,11 @@ window.girisYapVeyaKaydol = async () => {
 // --- VERİTABANI YAZMA & OKUMA İŞLEMLERİ ---
 // ============================================================================
 
-// Skor Kaydetme Fonksiyonu (Tüm Oyunlar İçin Ortak)
 function skorKaydet(oyunTuru, puan) {
     if (auth.currentUser) {
         const uid = auth.currentUser.uid;
         const skorYolu = `${oyunTuru}_best`;
         
-        // Önce mevcut rekoru kontrol et, yeni puan yüksekse güncelle
         database.ref(`users/${uid}/${skorYolu}`).once('value', (snapshot) => {
             const mevcutEnIyi = snapshot.val() || 0;
             if (puan > mevcutEnIyi) {
@@ -164,7 +178,6 @@ function skorKaydet(oyunTuru, puan) {
     }
 }
 
-// Altın Ekleme Fonksiyonu
 function addGold(amount) {
     if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -175,7 +188,6 @@ function addGold(amount) {
 }
 window.addGold = addGold;
 
-// Süre Sayacı Ekleme (Her saniye çalışır)
 setInterval(() => {
     if (auth.currentUser && isGameRunning && !isGameWaitingToStart) {
         const uid = auth.currentUser.uid;
@@ -185,7 +197,6 @@ setInterval(() => {
     }
 }, 1000);
 
-// Yan Paneldeki Skor Durumlarını Güncelleme
 function updateLeaderboardUI(data) {
     const games = ["snake", "brick", "space", "flappy", "pong", "blockblast"];
     games.forEach(game => {
@@ -196,7 +207,6 @@ function updateLeaderboardUI(data) {
     });
 }
 
-// Global Skor Tablosunu Güncelleme (En İyi 5 Kişi)
 function skorTablosunuGuncelle() {
     database.ref('users').orderByChild("snake_best").limitToLast(5).on("value", (snapshot) => {
         let enYuksek = 0;
@@ -271,7 +281,6 @@ function gameOver(silent = false) {
         playSound("hit");
         alert("💥 Oyun Bitti! Skorun: " + score);
         
-        // SKORU VE ALTINI GÜVENLİ ŞEKİLDE YENİ SİSTEME KAYDET
         skorKaydet(activeGame, score);
         let goldEarned = Math.floor(score / 5);
         if(goldEarned > 0) addGold(goldEarned);
@@ -295,7 +304,6 @@ document.getElementById("selectGartic")?.addEventListener("click", () => switchG
 document.getElementById("selectDino")?.addEventListener("click", () => switchGame("dino"));
 document.getElementById("selectCatch")?.addEventListener("click", () => switchGame("catch"));
 
-// Tuval Temizleme
 function clearCanvas() {
     const c = document.getElementById("gameCanvas");
     if(!c) return;
