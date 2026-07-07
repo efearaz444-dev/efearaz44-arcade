@@ -12,7 +12,7 @@ const firebaseConfig = {
 
 // Firebase başlatma
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 }
 
 // Nesneleri hemen global yap
