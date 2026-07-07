@@ -17,13 +17,13 @@ const canvasElement = document.getElementById("gameCanvas");
 let mobileIntervals = { left: null, right: null, up: null, down: null };
 
 // ============================================================================
-// --- 2. GÜVENLİ LİDERLİK TABLOSU MOTORU (Asla Yükleniyorda Kalmaz) ---
+// --- 2. STATİK / YEREL REKOR TABLOSU DÜZELTMESİ (Yükleniyorda Kalmaz) ---
 // ============================================================================
 function loadRealtimeLeaderboard(game) {
     const leaderContainer = document.querySelector(".en-iyiler-listesi") || document.getElementById("leaderboardContainer");
     if (!leaderContainer) return;
 
-    // Firebase kilitlenmelerini önleyen dinamik yerel rekor yapısı
+    // Firebase bağlantısı koptuğunda tablonun kilitlenmesini önleyen yerel simülasyon
     let localBests = {
         snake: 120, brick: 450, space: 800, flappy: 15, pong: 150, blast: 1200, dino: 340, catch: 210, xox: 100
     };
@@ -55,7 +55,7 @@ function skorKaydet(game, puan) {
 }
 
 // ============================================================================
-// --- 3. OYUN SEÇİM VE BAŞLATMA MANTIĞI ---
+// --- 3. OYUN MOTORLARI YÖNETİMİ ---
 // ============================================================================
 function switchGame(g) {
     if(window.isGameRunning) gameOver(true); 
@@ -121,11 +121,7 @@ function updateEngine() {
     else if (window.activeGame === "catch") updateCatch();
 }
 
-// ============================================================================
-// --- 4. BİREYSEL OYUN MEKANİKLERİ ---
-// ============================================================================
-
-// --- SNAKE ---
+// --- SNAKE ENGINE ---
 let snake = []; window.snakeDir = {x:1, y:0}; let food = {x:10, y:10};
 function initSnake() { snake = [{x:10, y:10}, {x:9, y:10}, {x:8, y:10}]; window.snakeDir = {x:1, y:0}; generateFood(); }
 function generateFood() { food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) }; }
@@ -143,7 +139,7 @@ function drawSnake() {
     ctx.fillStyle = "#ff1744"; ctx.fillRect(food.x*20, food.y*20, 18, 18);
 }
 
-// --- BRICK ---
+// --- BRICK ENGINE ---
 window.paddle = {x:160, w:80, h:10}; let ball = {x:200, y:300, dx:3, dy:-3, r:6}; let bricks = [];
 function initBrick() { ball = {x:200, y:300, dx:3, dy:-3, r:6}; window.paddle.x = 160; bricks = []; for(let r=0; r<4; r++) { for(let c=0; c<5; c++) { bricks.push({x: c*75 + 15, y: r*20 + 50, w:65, h:15, active:true}); } } }
 function updateBrick() {
@@ -161,7 +157,7 @@ function drawBrick() {
     bricks.forEach(b => { if(b.active) { ctx.fillStyle = "#ffca28"; ctx.fillRect(b.x, b.y, b.w, b.h); } });
 }
 
-// --- SPACE (Yana Sıçrama Sorunu Çözülmüş Sabit Hatlı Uzay Savaşı) ---
+// --- SPACE ENGINE (Akıcı ve Yana Kaymasız Sabit Hareket) ---
 window.playerX = 180; let playerLasers = []; let enemies = []; let spaceWave = 1;
 function initSpace() { window.playerX = 180; playerLasers = []; spawnSpaceEnemies(); }
 function spawnSpaceEnemies() { enemies = []; for(let r=0; r<3; r++) { for(let c=0; c<6; c++) { enemies.push({x: c*55 + 40, y: r*30 + 50, w:35, h:20, hp: spaceWave}); } } }
@@ -172,7 +168,7 @@ function updateSpace() {
         e.x += 1; if(e.x > 365 || e.x < 10) desc = true;
         playerLasers.forEach((l, li) => { if(l.x > e.x && l.x < e.x + e.w && l.y > e.y && l.y < e.y + e.h) { playerLasers.splice(li,1); e.hp--; window.score += 10; scoreElement.innerText = window.score; } });
     });
-    if(desc) { enemies.forEach(e => { e.y += 10; e.x = e.x > 200 ? e.x - 2 : e.x + 2; }); } 
+    if(desc) { enemies.forEach(e => { e.y += 10; e.x = e.x > 200 ? e.x - 2 : e.x + 2; }); } // Bianda yana zıplamalar engellendi
     enemies = enemies.filter(e => e.hp > 0);
     if(enemies.length === 0) { spaceWave++; spawnSpaceEnemies(); window.score += 100; }
     for(let e of enemies) { if(e.y + e.h >= 360) return gameOver(); }
@@ -185,7 +181,7 @@ function drawSpace() {
     ctx.fillStyle = "#d500f9"; enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
 }
 
-// --- CYBER BIRD / NEON BIRD ---
+// --- CYBER BIRD / NEON BIRD ENGINE ---
 let bird = {y:200, v:0, g:0.4, j:-7}; let pipes = []; let pipeTimer = 0;
 function initFlappy() { bird.y = 200; bird.v = 0; pipes = []; pipeTimer = 0; }
 function updateFlappy() {
@@ -204,7 +200,7 @@ function drawFlappy() {
     ctx.fillStyle = "#00b0ff"; pipes.forEach(p => { ctx.fillRect(p.x, 0, 50, p.top); ctx.fillRect(p.x, 400 - p.bottom, 50, p.bottom); });
 }
 
-// --- PONG ---
+// --- PONG ENGINE ---
 let pongBall = {x:200, y:200, dx:3, dy:2}; let p1Y = 150; let p2Y = 150;
 function initPong() { pongBall = {x:200, y:200, dx:4, dy:2}; p1Y = 150; p2Y = 150; }
 function updatePong() {
@@ -222,7 +218,7 @@ function drawPong() {
     ctx.fillStyle = "#fff"; ctx.fillRect(pongBall.x, pongBall.y, 10, 10);
 }
 
-// --- DINO ---
+// --- REX RUN (DINO) ---
 let dinoY = 0; let dinoV = 0; let obstacleX = 400;
 function initDino() { dinoY = 0; dinoV = 0; obstacleX = 400; }
 function updateDino() {
@@ -237,7 +233,7 @@ function drawDino() {
     ctx.fillStyle = "#ff1744"; ctx.fillRect(obstacleX, 350, 20, 30);
 }
 
-// --- CATCH ---
+// --- YILDIZ AVCISI (CATCH) ---
 window.catcherX = 170; let star = {x:200, y:0};
 function initCatch() { window.catcherX = 170; star = {x: Math.random()*360 + 20, y:0}; }
 function updateCatch() {
@@ -250,7 +246,7 @@ function drawCatch() {
     ctx.fillStyle = "#00e676"; ctx.fillRect(window.catcherX, 370, 60, 15);
 }
 
-// --- BLOCK BLAST (Koyulacak Blokların Göründüğü Yeni Tam Sürüm) ---
+// --- BLOCK BLAST ENGINE (BAŞTAN AŞAĞI YENİLENEN TAM SÜRÜM) ---
 let bbGrid = []; let bbSecenekler = []; let bbSeciliBlokIdx = -1;
 const HÜCRE_BOYUTU = 35; const BB_OFS_Y = 20;
 function initBlockBlast() {
@@ -278,7 +274,7 @@ function drawBlockBlast() {
             else { ctx.strokeStyle = "#333"; ctx.strokeRect(x, y, HÜCRE_BOYUTU, HÜCRE_BOYUTU); }
         }
     }
-    ctx.fillStyle = "#222"; ctx.fillRect(0, 320, 400, 80); 
+    ctx.fillStyle = "#222"; ctx.fillRect(0, 320, 400, 80); // Koyulacak blok kutuları görünür yapıldı
     bbSecenekler.forEach((blok, bIdx) => {
         if(blok.kullanildi) return;
         let baslangicX = bIdx * 130 + 30; let baslangicY = 330;
@@ -294,6 +290,7 @@ function handleBlastClick(x, y) {
         if(r >= 0 && r < 8 && cIdx >= 0 && cIdx < 8 && bbBlokYerlestirilebilirMi(r, cIdx, bbSecenekler[bbSeciliBlokIdx].matris)) {
             bbSecenekler[bbSeciliBlokIdx].matris.forEach((row, pr) => row.forEach((v, pc) => { if(v===1) bbGrid[r+pr][cIdx+pc] = bbSecenekler[bbSeciliBlokIdx].renk; }));
             bbSecenekler[bbSeciliBlokIdx].kullanildi = true; bbSeciliBlokIdx = -1;
+            // Sıra temizleme kontrolü
             for(let i=0; i<8; i++) { if(bbGrid[i].every(cell => cell !== "")) bbGrid[i].fill(""); }
             if(bbSecenekler.every(b => b.kullanildi)) bbBlokSecenekleriniUret();
             window.score += 20; scoreElement.innerText = window.score; drawBlockBlast();
@@ -304,7 +301,7 @@ function bbBlokYerlestirilebilirMi(sr, sc, m) {
     for(let r=0; r<m.length; r++) { for(let c=0; c<m[r].length; c++) { if(m[r][c]===1) { if(sr+r >= 8 || sc+c >= 8 || bbGrid[sr+r][sc+c] !== "") return false; } } } return true;
 }
 
-// --- XOX OYUNU VE NEON DÜZELTMESİ (Aktif ve Geri Döndü!) ---
+// --- BOKU YEMİŞ XOX & NEON DÜZELTMESİ (Görsel Buglar Temizlendi) ---
 let xoxBoard = Array(9).fill(""); let xoxTurn = "X";
 function initXOX() { xoxBoard = Array(9).fill(""); xoxTurn = "X"; drawXOX(); }
 function drawXOX() {
@@ -335,15 +332,16 @@ function checkXOXWinner() {
 }
 
 // ============================================================================
-// --- 5. PC KLAVYE KONTROLLERİNİN GERİ GETİRİLMESİ (W-A-S-D Tamir) ---
+// --- 4. W A S D / PC KLAVYE KONTROLLERİNİN TAMİRİ ---
 // ============================================================================
 window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
     const g = window.activeGame;
     
+    // Üst butonların klavyeyle engellenmesini önlemek için koruma
     if(["space", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) e.preventDefault();
 
-    // SNAKE KLAVYE HAREKETİ (Kusursuz Entegrasyon)
+    // SNAKE KLAVYE (WASD & Ok Tuşları Tamamen Aktif)
     if (g === "snake") {
         if((key === "w" || e.key === "ArrowUp") && window.snakeDir.y !== 1) window.snakeDir = {x:0, y:-1};
         if((key === "s" || e.key === "ArrowDown") && window.snakeDir.y !== -1) window.snakeDir = {x:0, y:1};
@@ -351,7 +349,7 @@ window.addEventListener("keydown", (e) => {
         if((key === "d" || e.key === "ArrowRight") && window.snakeDir.x !== -1) window.snakeDir = {x:1, y:0};
     }
     
-    // DİĞER BÜTÜN OYUNLAR HAREKET
+    // DİĞER OYUNLAR HAREKET
     if (key === "a" || e.key === "ArrowLeft") {
         if((g === "brick" || g === "pong") && window.paddle.x > 0) window.paddle.x -= 20;
         if(g === "space" && window.playerX > 10) window.playerX -= 15;
@@ -368,7 +366,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 // ============================================================================
-// --- 6. MOBİL TUŞLAR & CYBER BIRD TEK TIKLAMA DÜZENLEMESİ ---
+// --- 5. MOBİL BASILI TUTMA & CYBER BIRD TEK TIKLAMA DÜZENLEMESİ ---
 // ============================================================================
 function handleMoveStart(dir) {
     if (!window.isGameRunning) return;
@@ -406,7 +404,7 @@ function fireOrJump() {
     if(!window.isGameRunning) return;
     if(window.isGameWaitingToStart) window.isGameWaitingToStart = false;
     if(window.activeGame === "space") playerLasers.push({x: window.playerX + 18, y: 350});
-    if(window.activeGame === "flappy") bird.v = bird.j; // Çıldırtan basılı tutma zıplaması iptal, artık sadece tek tık!
+    if(window.activeGame === "flappy") bird.v = bird.j; // Cyber Bird basılı tutunca çıldırma mekaniği kaldırıldı, sadece tek tıklama!
     if(window.activeGame === "dino" && dinoY === 0) dinoV = 11;
 }
 
@@ -426,7 +424,7 @@ if (canvasElement) {
     });
 }
 
-// Mobil Buton Bağlantıları
+// Mobil Butonları Dinamik Tetikleyicilere Bağlama
 const btnMap = { btnUp: "up", btnDown: "down", btnLeft: "left", btnRight: "right" };
 Object.keys(btnMap).forEach(id => {
     const el = document.getElementById(id);
