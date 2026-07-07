@@ -1070,64 +1070,59 @@ function updateLeaderboardUI() {
 // ============================================================================
 
 function globalSkorKaydet(kullaniciAdi, sifre, alinanSkor) {
-    const userRef = firebase.database().ref('users/' + kullaniciAdi);
+    // window.database kullanıyorduk, onu sabitleyelim
+    const db = window.database || firebase.database(); 
+    const userRef = db.ref('users/' + kullaniciAdi);
 
     userRef.once('value').then((snapshot) => {
         const userData = snapshot.val();
         
-        // Kullanıcı adı boşsa veya şifre veritabanındakiyle eşleşiyorsa rekor kontrolü yap
         if (!userData || userData.sifre === sifre) {
-            const eskiRekor = userData ? (userData.enYuksekSkor || 0) : 0;
+            const eskiRekor = userData ? (Number(userData.enYuksekSkor) || 0) : 0;
+            const yeniSkor = Number(alinanSkor); // Kesinlikle sayı olsun!
 
-            if (alinanSkor > eskiRekor) {
+            if (yeniSkor > eskiRekor) {
                 userRef.set({
                     kullaniciAdi: kullaniciAdi,
                     sifre: sifre,
-                    enYuksekSkor: alinanSkor
+                    enYuksekSkor: yeniSkor
                 }).then(() => {
-                    console.log("Global rekor güncellendi!");
-                    globalLeaderboardCek(); // Tabloyu anında güncelle
+                    console.log("Rekor başarıyla kaydedildi!");
+                    globalLeaderboardCek();
                 });
             }
         } else {
-            alert("Bu kullanıcı adı başka bir şifreyle kayıtlı! Skorunuz küresel tabloya işlenmedi.");
+            console.warn("Şifre hatası!");
         }
     });
 }
 
 function globalLeaderboardCek() {
-    // Veritabanından en yüksek skora göre sıralayıp ilk 10 kişiyi getiriyoruz
-    firebase.database().ref('users')
-        .orderByChild('enYuksekSkor')
-        .limitToLast(10)
-        .once('value').then((snapshot) => {
-            
-            let oyuncuListesi = [];
-            snapshot.forEach((childSnapshot) => {
-                oyuncuListesi.push(childSnapshot.val());
-            });
-
-            // Büyükten küçüğe sıralamak için ters çeviriyoruz
-            oyuncuListesi.reverse();
-
-            // HTML dosyasında kendi ellerinle açacağın listenin kapsayıcı ID'si
-            const panoContainer = document.getElementById("globalPano");
-            if (!panoContainer) return;
-
-            panoContainer.innerHTML = "";
-
-            oyuncuListesi.forEach((oyuncu, index) => {
-                let sira = index === 0 ? "👑" : (index + 1) + ".";
-                
-                // HTML tasarımına göre bu satırın yapısını dilediğin gibi süsleyebilirsin kirve
-                panoContainer.innerHTML += `
-                    <div class="score-row">
-                        <span>${sira} ${oyuncu.kullaniciAdi}</span>
-                        <span>${oyuncu.enYuksekSkor} Puan</span>
-                    </div>
-                `;
-            });
+    const db = window.database || firebase.database();
+    // 'users' altındaki verileri çek ve enYuksekSkor'a göre sırala
+    db.ref('users').orderByChild('enYuksekSkor').limitToLast(10).once('value').then((snapshot) => {
+        const panoContainer = document.getElementById("globalPano");
+        if (!panoContainer) return;
+        
+        let oyuncuListesi = [];
+        snapshot.forEach((childSnapshot) => {
+            oyuncuListesi.push(childSnapshot.val());
         });
+        
+        // Büyükten küçüğe sırala (limitToLast en küçükleri en başa koyar, reverse lazım)
+        oyuncuListesi.sort((a, b) => b.enYuksekSkor - a.enYuksekSkor);
+
+        panoContainer.innerHTML = "";
+        oyuncuListesi.forEach((oyuncu, index) => {
+            let sira = index === 0 ? "👑" : (index + 1) + ".";
+            panoContainer.innerHTML += `
+                <div class="score-row" style="display:flex; justify-content:space-between; margin:5px 0;">
+                    <span>${sira} ${oyuncu.kullaniciAdi}</span>
+                    <span>${oyuncu.enYuksekSkor} Puan</span>
+                </div>
+            `;
+        });
+    });
 }
 
 function updateShopUI() { 
