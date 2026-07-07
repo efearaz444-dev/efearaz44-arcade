@@ -79,37 +79,33 @@ window.girisYapVeyaKaydol = async () => {
         .replace(/ş/g, 's')
         .replace(/ö/g, 'o')
         .replace(/ç/g, 'c')
-        .replace(/[^a-z0-9]/g, ''); // Sadece harf ve sayıları bırak
+        .replace(/[^a-z0-9]/g, '');
 
-    // Karakter temizlendikten sonra boş kaldıysa veya çok kısaysa rastgele bir şeyler ekle
     if (!cleanedInput || cleanedInput.length < 3) {
         cleanedInput = "player_" + Math.random().toString(36).substring(2, 7);
     }
 
-    // Kesinlikle standartlara uygun bir e-posta adresi üretiyoruz
     const email = `${cleanedInput}@arcadeapp.com`;
-
-    // Konsolda ne gönderdiğimizi görelim (Hata ayıklama için)
-    console.log("Firebase'e gönderilen Email:", email);
-    console.log("Firebase'e gönderilen Şifre Uzunluğu:", passwordInput.length);
 
     try {
         // 1. Önce Giriş Yapmayı Dene
         await authObj.signInWithEmailAndPassword(email, passwordInput);
-        console.log("Giriş başarılı! Sayfa yenileniyor...");
         location.reload();
     } catch (error) {
-        console.warn("Giriş denemesi başarısız, kayıt aranıyor. Hata Kodu:", error.code);
+        console.warn("Giriş denemesi başarısız, hata kodu:", error.code);
         
-        // 2. Kullanıcı yoksa veya şifre yanlışsa (Yeni Kayıt Oluştur)
+        // Firebase artık şifre yanlışsa veya kullanıcı yoksa INVALID_LOGIN_CREDENTIALS dönüyor.
+        // Bu yüzden kontrol listemize 'auth/invalid-login-credentials' kodunu da ekledik.
         if (
             error.code === 'auth/user-not-found' || 
             error.code === 'auth/invalid-credential' || 
             error.code === 'auth/wrong-password' || 
-            error.code === 'auth/invalid-email'
+            error.code === 'auth/invalid-email' ||
+            error.code === 'auth/invalid-login-credentials' ||
+            String(error.message).includes("INVALID_LOGIN_CREDENTIALS")
         ) {
             try {
-                console.log("Kullanıcı bulunamadı. Yeni hesap oluşturuluyor...");
+                console.log("Kullanıcı bulunamadı veya bilgiler eşleşmedi. Yeni hesap oluşturuluyor...");
                 const userCredential = await authObj.createUserWithEmailAndPassword(email, passwordInput);
                 
                 // Realtime Database'e orijinal kullanıcı adıyla kaydet
@@ -129,7 +125,7 @@ window.girisYapVeyaKaydol = async () => {
                 console.log("Kayıt işlemi başarılı!");
                 location.reload();
             } catch (kayitHata) {
-                console.error("Kayıt sırasında 400 hatası:", kayitHata);
+                console.error("Kayıt sırasında hata:", kayitHata);
                 alert("Kayıt Başarısız: " + kayitHata.message);
             }
         } else {
