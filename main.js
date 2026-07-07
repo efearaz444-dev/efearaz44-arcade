@@ -9,7 +9,6 @@ let gameInterval = null;
 let currentSkin = "classic";
 let purchasedSkins = ["classic"];
 
-// DOM Elemanları referansları
 const scoreElement = document.getElementById("score");
 const startBtn = document.getElementById("startBtn");
 const mobileStartBtn = document.getElementById("mobileStartBtn");
@@ -19,7 +18,6 @@ const mPanel = document.getElementById("multiplayerPanel");
 const totalGoldEl = document.getElementById("totalGold");
 const totalTimeDisplay = document.getElementById("totalTimeDisplay");
 
-// Ses efektleri yükleme kontrolü
 let audioCtx = null;
 function playSound(type) {
     try {
@@ -29,28 +27,24 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         if (type === "eat") {
-            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             osc.start(); osc.stop(audioCtx.currentTime + 0.08);
         } else if (type === "hit") {
             osc.frequency.setValueAtTime(150, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
             osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-        } else if (type === "dink") {
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
         }
     } catch(e) {}
 }
 window.playSound = playSound;
 
 // ============================================================================
-// --- 2. GİRİŞ FONKSİYONLARI (HTML BUTONLARI İÇİN EN BAŞTA WINDOW'A BAĞLANDI) ---
+// --- 2. GİRİŞ FONKSİYONLARI (400 HATASI KORUMALI TAM SÜRÜM) ---
 // ============================================================================
 window.googleIleGiris = () => {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
-    if (!authObj) return alert("Firebase henüz yüklenmedi, lütfen sayfayı yenileyip 2 saniye bekleyin.");
+    if (!authObj) return alert("Firebase henüz hazır değil, lütfen sayfayı yenileyip bekleyin.");
 
     const provider = new firebase.auth.GoogleAuthProvider();
     authObj.signInWithPopup(provider)
@@ -68,35 +62,59 @@ window.girisYapVeyaKaydol = async () => {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
     const dbObj = window.database || (typeof firebase !== 'undefined' ? firebase.database() : null);
 
-    if (!authObj || !dbObj) return alert("Firebase bağlantısı kuruluyor, lütfen 2 saniye sonra tekrar deneyin.");
+    if (!authObj || !dbObj) return alert("Firebase bağlantısı bekleniyor, lütfen 2 saniye sonra deneyin.");
 
-    let emailInput = document.getElementById("usernameInput").value.trim();
+    let rawInput = document.getElementById("usernameInput").value.trim();
     const passwordInput = document.getElementById("passwordInput").value.trim();
 
-    if (!emailInput || !passwordInput) return alert("Kullanıcı adı ve şifre girmelisin!");
-    if (passwordInput.length < 6) return alert("Güvenlik nedeniyle şifreniz en az 6 karakter olmalıdır!");
+    if (!rawInput || !passwordInput) return alert("Kullanıcı adı ve şifre alanları boş bırakılamaz!");
+    if (passwordInput.length < 6) return alert("Firebase kuralı gereği şifreniz en az 6 karakter olmalıdır!");
 
-    // TÜRKÇE KARAKTER VE GEÇERSİZ KARAKTER TEMİZLİĞİ (400 HATASI KORUMASI)
-    emailInput = emailInput
-        .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
-        .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
-        .replace(/I/g, 'i').replace(/Ğ/g, 'g').replace(/Ü/g, 'u')
-        .replace(/Ş/g, 's').replace(/Ö/g, 'o').replace(/Ç/g, 'c')
-        .replace(/[^a-zA-Z0-9]/g, '');
+    // Türkçe karakterleri güvenli bir şekilde İngilizce karakterlere dönüştür
+    let cleanedInput = rawInput
+        .toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]/g, ''); // Sadece harf ve sayıları bırak
 
-    if (emailInput.length < 3) return alert("Kullanıcı adı çok kısa veya geçersiz karakterler içeriyor!");
+    // Karakter temizlendikten sonra boş kaldıysa veya çok kısaysa rastgele bir şeyler ekle
+    if (!cleanedInput || cleanedInput.length < 3) {
+        cleanedInput = "player_" + Math.random().toString(36).substring(2, 7);
+    }
 
-    const email = `${emailInput.toLowerCase()}@arcade.com`;
+    // Kesinlikle standartlara uygun bir e-posta adresi üretiyoruz
+    const email = `${cleanedInput}@arcadeapp.com`;
+
+    // Konsolda ne gönderdiğimizi görelim (Hata ayıklama için)
+    console.log("Firebase'e gönderilen Email:", email);
+    console.log("Firebase'e gönderilen Şifre Uzunluğu:", passwordInput.length);
 
     try {
+        // 1. Önce Giriş Yapmayı Dene
         await authObj.signInWithEmailAndPassword(email, passwordInput);
+        console.log("Giriş başarılı! Sayfa yenileniyor...");
         location.reload();
     } catch (error) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        console.warn("Giriş denemesi başarısız, kayıt aranıyor. Hata Kodu:", error.code);
+        
+        // 2. Kullanıcı yoksa veya şifre yanlışsa (Yeni Kayıt Oluştur)
+        if (
+            error.code === 'auth/user-not-found' || 
+            error.code === 'auth/invalid-credential' || 
+            error.code === 'auth/wrong-password' || 
+            error.code === 'auth/invalid-email'
+        ) {
             try {
+                console.log("Kullanıcı bulunamadı. Yeni hesap oluşturuluyor...");
                 const userCredential = await authObj.createUserWithEmailAndPassword(email, passwordInput);
+                
+                // Realtime Database'e orijinal kullanıcı adıyla kaydet
                 await dbObj.ref('users/' + userCredential.user.uid).set({
-                    username: emailInput,
+                    username: rawInput, 
                     gold: 0,
                     totalTime: 0,
                     snake_best: 0,
@@ -107,18 +125,21 @@ window.girisYapVeyaKaydol = async () => {
                     blockblast_best: 0,
                     created_at: new Date().toISOString()
                 });
+                
+                console.log("Kayıt işlemi başarılı!");
                 location.reload();
             } catch (kayitHata) {
-                alert("Kayıt olunamadı: " + kayitHata.message);
+                console.error("Kayıt sırasında 400 hatası:", kayitHata);
+                alert("Kayıt Başarısız: " + kayitHata.message);
             }
         } else {
-            alert("Giriş Hatası: " + error.message);
+            alert("Firebase Hatası: " + error.message);
         }
     }
 };
 
 // ============================================================================
-// --- 3. FIREBASE DİNLEYİCİLERİ VE SKOR YÖNETİMİ ---
+// --- 3. FIREBASE OTO-DİNLEYİCİLER ---
 // ============================================================================
 setTimeout(() => {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
@@ -140,7 +161,6 @@ setTimeout(() => {
                     }
                 });
                 
-                // Top 5 En Yüksek Skor Tablosunu Güncelle (Snake Bazlı)
                 dbObj.ref('users').orderByChild("snake_best").limitToLast(5).on("value", (snapshot) => {
                     let enYuksek = 0;
                     snapshot.forEach((childSnapshot) => {
@@ -160,16 +180,13 @@ setTimeout(() => {
 function skorKaydet(oyunTuru, puan) {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
     const dbObj = window.database || (typeof firebase !== 'undefined' ? firebase.database() : null);
-    
     if (authObj && authObj.currentUser && dbObj) {
         const uid = authObj.currentUser.uid;
         const skorYolu = `${oyunTuru}_best`;
-        
         dbObj.ref(`users/${uid}/${skorYolu}`).once('value', (snapshot) => {
             const mevcutEnIyi = snapshot.val() || 0;
             if (puan > mevcutEnIyi) {
-                const updateData = {};
-                updateData[skorYolu] = puan;
+                const updateData = {}; updateData[skorYolu] = puan;
                 dbObj.ref('users/' + uid).update(updateData);
             }
         });
@@ -179,26 +196,16 @@ function skorKaydet(oyunTuru, puan) {
 function addGold(amount) {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
     const dbObj = window.database || (typeof firebase !== 'undefined' ? firebase.database() : null);
-
     if (authObj && authObj.currentUser && dbObj) {
-        const uid = authObj.currentUser.uid;
-        dbObj.ref('users/' + uid + '/gold').transaction((currentGold) => {
-            return (currentGold || 0) + amount;
-        });
+        dbObj.ref('users/' + authObj.currentUser.uid + '/gold').transaction((g) => (g || 0) + amount);
     }
 }
-window.addGold = addGold;
 
-// Zaman Sayacı Gerçek Zamanlı Güncelleme
 setInterval(() => {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
     const dbObj = window.database || (typeof firebase !== 'undefined' ? firebase.database() : null);
-
     if (authObj && authObj.currentUser && dbObj && isGameRunning && !isGameWaitingToStart) {
-        const uid = authObj.currentUser.uid;
-        dbObj.ref('users/' + uid + '/totalTime').transaction((currentTime) => {
-            return (currentTime || 0) + 1;
-        });
+        dbObj.ref('users/' + authObj.currentUser.uid + '/totalTime').transaction((t) => (t || 0) + 1);
     }
 }, 1000);
 
@@ -206,30 +213,27 @@ function updateLeaderboardUI(data) {
     const games = ["snake", "brick", "space", "flappy", "pong", "blockblast"];
     games.forEach(game => {
         const el = document.getElementById(`${game}Best`);
-        if (el) {
-            el.innerText = (data[game + "_best"] || 0) + " Puan";
-        }
+        if (el) el.innerText = (data[game + "_best"] || 0) + " Puan";
     });
 }
 
 // ============================================================================
-// --- 4. OYUN MOTORU ANA DÖNGÜSÜ VE KONTROLLER ---
+// --- 4. OYUN MOTORU SISTEMI ---
 // ============================================================================
 function switchGame(g) {
-    if(isGameRunning) gameOver(true); 
-    activeGame = g; score = 0; if(scoreElement) scoreElement.innerText = score; if(mPanel) mPanel.classList.add("hidden");
-    
+    if(isGameRunning) gameOver(true); activeGame = g; score = 0; 
+    if(scoreElement) scoreElement.innerText = score; if(mPanel) mPanel.classList.add("hidden");
     document.querySelectorAll(".game-selector button").forEach(b => b.classList.remove("active")); 
-    let targetBtn = document.getElementById("select" + g.charAt(0).toUpperCase() + g.slice(1)) || document.getElementById("select" + g) || document.getElementById("select" + g.toLowerCase());
-    if(targetBtn) targetBtn.classList.add("active");
+    let tBtn = document.getElementById("select" + g.charAt(0).toUpperCase() + g.slice(1)) || document.getElementById("select" + g);
+    if(tBtn) tBtn.classList.add("active");
     
     if (g === "snake") { if(welcomeText) welcomeText.innerText = "🐍 Klasik Yılan Oyunu"; initSnake(); }
-    else if (g === "brick") { if(welcomeText) welcomeText.innerText = "🧱 Siber Tuğla Kırma"; initBrick(); }
-    else if (g === "space") { if(welcomeText) welcomeText.innerText = "🚀 Neon Uzay Savaşı"; spaceWave = 1; initSpace(); }
-    else if (g === "flappy") { if(welcomeText) welcomeText.innerText = "🛸 Neon Cyber Bird"; initFlappy(); }
-    else if (g === "pong") { if(welcomeText) welcomeText.innerText = "🔴 Yapay Zekaya Karşı Pong"; initPong(); }
-    else if (g === "blockblast") { if(welcomeText) welcomeText.innerText = "🟨 Neon Block Blast Arenası"; initBlockBlast(); }
-    else if (g === "dino") { if(welcomeText) welcomeText.innerText = "Rex Neon Dino Run"; initDino(); }
+    else if (g === "brick") { if(welcomeText) welcomeText.innerText = "🧱 Tuğla Kırma"; initBrick(); }
+    else if (g === "space") { if(welcomeText) welcomeText.innerText = "🚀 Uzay Savaşı"; spaceWave = 1; initSpace(); }
+    else if (g === "flappy") { if(welcomeText) welcomeText.innerText = "🛸 Neon Bird"; initFlappy(); }
+    else if (g === "pong") { if(welcomeText) welcomeText.innerText = "🔴 Pong"; initPong(); }
+    else if (g === "blockblast") { if(welcomeText) welcomeText.innerText = "🟨 Block Blast"; initBlockBlast(); }
+    else if (g === "dino") { if(welcomeText) welcomeText.innerText = "🦖 Dino Run"; initDino(); }
     else if (g === "catch") { if(welcomeText) welcomeText.innerText = "🌟 Yıldız Avcısı"; initCatch(); }
 }
 window.switchGame = switchGame;
@@ -238,10 +242,8 @@ function startActiveGame() {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
     if (!authObj || !authObj.currentUser) {
         alert("Oyuna başlamak için önce giriş yapmalısın!");
-        if (nameModal) nameModal.style.display = "flex";
-        return;
+        if (nameModal) nameModal.style.display = "flex"; return;
     }
-    
     score = 0; if(scoreElement) scoreElement.innerText = score; 
     isGameRunning = true; isGameWaitingToStart = true; 
     if(startBtn) startBtn.innerText = "Yeniden Başlat"; if(mobileStartBtn) mobileStartBtn.innerText = "Yeniden Başlat";
@@ -265,14 +267,11 @@ function startActiveGame() {
 window.startActiveGame = startActiveGame;
 
 function gameOver(silent = false) {
-    isGameRunning = false;
-    clearInterval(gameInterval);
+    isGameRunning = false; clearInterval(gameInterval);
     if(!silent) {
-        playSound("hit");
-        alert("💥 Oyun Bitti! Skorun: " + score);
+        playSound("hit"); alert("💥 Oyun Bitti! Skorun: " + score);
         skorKaydet(activeGame, score);
-        let goldEarned = Math.floor(score / 5);
-        if(goldEarned > 0) addGold(goldEarned);
+        let goldEarned = Math.floor(score / 5); if(goldEarned > 0) addGold(goldEarned);
     }
     if(startBtn) startBtn.innerText = "Oyunu Başlat";
     if(mobileStartBtn) mobileStartBtn.innerText = "🎮 OYUNU BAŞLAT / YENİDEN BAŞLAT";
@@ -288,73 +287,46 @@ function updateEngine() {
     else if (activeGame === "catch") updateCatch();
 }
 
-function clearCanvas() {
-    const c = document.getElementById("gameCanvas");
-    if(!c) return;
-    const ctx = c.getContext("2d");
-    ctx.clearRect(0,0,c.width,c.height);
-}
-window.clearCanvas = clearCanvas;
-
-// ============================================================================
-// --- 5. KLASİK OYUNLARIN KENDİ İÇ MANTIKLARI ---
-// ============================================================================
-
-// --- SNAKE OYUNU ---
+// --- SNAKE ---
 let snake = []; let snakeDir = {x:1, y:0}; let food = {x:10, y:10};
-function initSnake() {
-    snake = [{x:10, y:10}, {x:9, y:10}, {x:8, y:10}];
-    snakeDir = {x:1, y:0}; generateFood();
-}
-function generateFood() {
-    food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) };
-}
+function initSnake() { snake = [{x:10, y:10}, {x:9, y:10}, {x:8, y:10}]; snakeDir = {x:1, y:0}; generateFood(); }
+function generateFood() { food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) }; }
 function updateSnake() {
     if(!isGameRunning || isGameWaitingToStart) return;
     let head = { x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.y };
-    
     if(head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) return gameOver();
     for(let s of snake) { if(s.x === head.x && s.y === head.y) return gameOver(); }
-    
     snake.unshift(head);
     if(head.x === food.x && head.y === food.y) {
-        score += 10; if(scoreElement) scoreElement.innerText = score;
-        playSound("eat"); generateFood();
-    } else {
-        snake.pop();
-    }
+        score += 10; if(scoreElement) scoreElement.innerText = score; playSound("eat"); generateFood();
+    } else { snake.pop(); }
     drawSnake();
 }
 function drawSnake() {
     const c = document.getElementById("gameCanvas"); if(!c) return; const ctx = c.getContext("2d");
     ctx.fillStyle = "#222"; ctx.fillRect(0,0,c.width,c.height);
-    ctx.fillStyle = currentSkin === "blue" ? "#00b0ff" : currentSkin === "red" ? "#ff1744" : currentSkin === "gold" ? "#ffca28" : "#00e676";
+    ctx.fillStyle = currentSkin === "blue" ? "#00b0ff" : currentSkin === "red" ? "#ff1744" : "#00e676";
     for(let s of snake) ctx.fillRect(s.x*20, s.y*20, 18, 18);
     ctx.fillStyle = "#ff1744"; ctx.fillRect(food.x*20, food.y*20, 18, 18);
 }
 
-// --- TUĞLA KIRMA ---
+// --- BRICK ---
 let ball = {x:200, y:200, dx:3, dy:-3, r:6}; let paddle = {x:150, w:80, h:10}; let bricks = [];
 function initBrick() {
     ball = {x:200, y:300, dx:3, dy:-3, r:6}; paddle.x = 160; bricks = [];
-    for(let r=0; r<4; r++) {
-        for(let c=0; c<5; c++) { bricks.push({x: c*75 + 15, y: r*20 + 50, w:65, h:15, active:true}); }
-    }
+    for(let r=0; r<4; r++) { for(let c=0; c<5; c++) { bricks.push({x: c*75 + 15, y: r*20 + 50, w:65, h:15, active:true}); } }
 }
 function updateBrick() {
-    if(!isGameRunning) return;
-    if(isGameWaitingToStart) { drawBrick(); return; }
+    if(!isGameRunning) return; if(isGameWaitingToStart) { drawBrick(); return; }
     ball.x += ball.dx; ball.y += ball.dy;
     if(ball.x - ball.r < 0 || ball.x + ball.r > 400) ball.dx *= -1;
     if(ball.y - ball.r < 0) ball.dy *= -1;
     if(ball.y + ball.r > 390) {
-        if(ball.x > paddle.x && ball.x < paddle.x + paddle.w) { ball.dy *= -1; playSound("eat"); }
-        else { return gameOver(); }
+        if(ball.x > paddle.x && ball.x < paddle.x + paddle.w) { ball.dy *= -1; } else { return gameOver(); }
     }
     for(let b of bricks) {
         if(b.active && ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
             ball.dy *= -1; b.active = false; score += 20; if(scoreElement) scoreElement.innerText = score;
-            playSound("eat");
         }
     }
     if(bricks.filter(b=>b.active).length === 0) { score += 500; gameOver(false); }
@@ -365,21 +337,14 @@ function drawBrick() {
     ctx.fillStyle = "#111"; ctx.fillRect(0,0,c.width,c.height);
     ctx.fillStyle = "#00b0ff"; ctx.fillRect(paddle.x, 380, paddle.w, paddle.h);
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-    for(let b of bricks) {
-        if(b.active) { ctx.fillStyle = "#ffca28"; ctx.fillRect(b.x, b.y, b.w, b.h); }
-    }
+    for(let b of bricks) { if(b.active) { ctx.fillStyle = "#ffca28"; ctx.fillRect(b.x, b.y, b.w, b.h); } }
 }
 
-// --- UZAY SAVAŞI ---
+// --- SPACE ---
 let playerX = 180; let playerLasers = []; let enemies = []; let spaceWave = 1;
-function initSpace() {
-    playerX = 180; playerLasers = []; enemies = []; spawnSpaceEnemies();
-}
+function initSpace() { playerX = 180; playerLasers = []; enemies = []; spawnSpaceEnemies(); }
 function spawnSpaceEnemies() {
-    enemies = [];
-    for(let r=0; r<3; r++) {
-        for(let c=0; c<6; c++) { enemies.push({x: c*55 + 40, y: r*30 + 50, w:35, h:20, hp: spaceWave}); }
-    }
+    enemies = []; for(let r=0; r<3; r++) { for(let c=0; c<6; c++) { enemies.push({x: c*55 + 40, y: r*30 + 50, w:35, h:20, hp: spaceWave}); } }
 }
 function updateSpace() {
     if(!isGameRunning || isGameWaitingToStart) return;
@@ -389,8 +354,7 @@ function updateSpace() {
         e.x += 1; if(e.x > 365 || e.x < 10) { desc = true; }
         playerLasers.forEach((l, li) => {
             if(l.x > e.x && l.x < e.x + e.w && l.y > e.y && l.y < e.y + e.h) {
-                playerLasers.splice(li,1); e.hp--; score += 10;
-                if(scoreElement) scoreElement.innerText = score; playSound("eat");
+                playerLasers.splice(li,1); e.hp--; score += 10; if(scoreElement) scoreElement.innerText = score;
             }
         });
     });
@@ -408,14 +372,12 @@ function drawSpace() {
     enemies.forEach(e => { ctx.fillStyle = "#ff1744"; ctx.fillRect(e.x, e.y, e.w, e.h); });
 }
 
-// --- CYBER BIRD ---
+// --- FLAPPY ---
 let bird = {y:200, v:0, g:0.4, j:-7}; let pipes = []; let pipeTimer = 0;
 function initFlappy() { bird.y = 200; bird.v = 0; pipes = []; pipeTimer = 0; }
 function updateFlappy() {
-    if(!isGameRunning) return;
-    if(isGameWaitingToStart) { drawFlappy(); return; }
-    bird.v += bird.g; bird.y += bird.v;
-    if(bird.y > 400 || bird.y < 0) return gameOver();
+    if(!isGameRunning) return; if(isGameWaitingToStart) { drawFlappy(); return; }
+    bird.v += bird.g; bird.y += bird.v; if(bird.y > 400 || bird.y < 0) return gameOver();
     pipeTimer++;
     if(pipeTimer % 90 === 0) {
         let h = Math.floor(Math.random()*150) + 50;
@@ -423,10 +385,8 @@ function updateFlappy() {
     }
     pipes.forEach((p, i) => {
         p.x -= 3; if(p.x < -60) pipes.splice(i,1);
-        if(!p.passed && p.x < 100) { p.passed = true; score += 1; if(scoreElement) scoreElement.innerText = score; playSound("eat"); }
-        if(100 + 20 > p.x && 100 < p.x + 50) {
-            if(bird.y < p.top || bird.y + 20 > 400 - p.bottom) return gameOver();
-        }
+        if(!p.passed && p.x < 100) { p.passed = true; score += 1; if(scoreElement) scoreElement.innerText = score; }
+        if(100 + 20 > p.x && 100 < p.x + 50) { if(bird.y < p.top || bird.y + 20 > 400 - p.bottom) return gameOver(); }
     });
     drawFlappy();
 }
@@ -437,7 +397,7 @@ function drawFlappy() {
     ctx.fillStyle = "#00b0ff"; pipes.forEach(p => { ctx.fillRect(p.x, 0, 50, p.top); ctx.fillRect(p.x, 400 - p.bottom, 50, p.bottom); });
 }
 
-// --- NEON PONG ---
+// --- PONG ---
 let pongBall = {x:200, y:200, dx:3, dy:2}; let p1Y = 150; let p2Y = 150;
 function initPong() { pongBall = {x:200, y:200, dx:4, dy:2}; p1Y = 150; p2Y = 150; }
 function updatePong() {
@@ -446,10 +406,10 @@ function updatePong() {
     if(pongBall.y < 0 || pongBall.y > 390) pongBall.dy *= -1;
     let target = pongBall.y - 30; p2Y += (target - p2Y) * 0.08;
     if(pongBall.x < 25) {
-        if(pongBall.y > p1Y && pongBall.y < p1Y + 70) { pongBall.dx *= -1.05; score += 5; if(scoreElement) scoreElement.innerText = score; playSound("eat"); }
+        if(pongBall.y > p1Y && pongBall.y < p1Y + 70) { pongBall.dx *= -1.05; score += 5; if(scoreElement) scoreElement.innerText = score; }
         else { return gameOver(); }
     }
-    if(pongBall.x > 370) { if(pongBall.y > p2Y && pongBall.y < p2Y + 70) { pongBall.dx *= -1; playSound("dink"); } else { score += 50; initPong(); } }
+    if(pongBall.x > 370) { if(pongBall.y > p2Y && pongBall.y < p2Y + 70) { pongBall.dx *= -1; } else { score += 50; initPong(); } }
     drawPong();
 }
 function drawPong() {
@@ -481,7 +441,7 @@ function initDino() { dinoY = 0; dinoV = 0; obstacleX = 400; }
 function updateDino() {
     if(!isGameRunning || isGameWaitingToStart) return;
     dinoV -= 0.5; dinoY += dinoV; if(dinoY < 0) { dinoY = 0; dinoV = 0; }
-    obstacleX -= 5; if(obstacleX < -20) { obstacleX = 400; score += 10; if(scoreElement) scoreElement.innerText = score; playSound("eat"); }
+    obstacleX -= 5; if(obstacleX < -20) { obstacleX = 400; score += 10; if(scoreElement) scoreElement.innerText = score; }
     if(obstacleX > 40 && obstacleX < 70 && dinoY < 30) return gameOver();
     drawDino();
 }
@@ -490,17 +450,15 @@ function drawDino() {
     ctx.fillStyle = "#111"; ctx.fillRect(0,0,c.width,c.height);
     ctx.fillStyle = "#00b0ff"; ctx.fillRect(40, 350 - dinoY, 30, 30);
     ctx.fillStyle = "#ff1744"; ctx.fillRect(obstacleX, 350, 20, 30);
-    ctx.fillStyle = "#555"; ctx.fillRect(0, 380, 400, 2);
 }
 
-// --- YILDIZ AVCISI ---
+// --- CATCH ---
 let catcherX = 170; let star = {x:200, y:0};
 function initCatch() { catcherX = 170; star = {x: Math.random()*360 + 20, y:0}; }
 function updateCatch() {
-    if(!isGameRunning || isGameWaitingToStart) return;
-    star.y += 4;
+    if(!isGameRunning || isGameWaitingToStart) return; star.y += 4;
     if(star.y > 360 && star.x > catcherX && star.x < catcherX + 60) {
-        score += 15; if(scoreElement) scoreElement.innerText = score; playSound("eat");
+        score += 15; if(scoreElement) scoreElement.innerText = score;
         star = {x: Math.random()*360 + 20, y:0};
     } else if(star.y > 400) { return gameOver(); }
     drawCatch();
@@ -513,60 +471,46 @@ function drawCatch() {
 }
 
 // ============================================================================
-// --- 6. EVENT LISTENERS (KLAVYE, FARE VE BUTONLAR) ---
+// --- 5. EVENT LISTENERS ---
 // ============================================================================
 window.addEventListener("keydown", (e) => {
-    // Yılan Yön Kontrolleri
     if(activeGame === "snake") {
-        if(e.key === "ArrowUp" && snakeDir.y !== 1) { snakeDir = {x:0, y:-1}; }
-        else if(e.key === "ArrowDown" && snakeDir.y !== -1) { snakeDir = {x:0, y:1}; }
-        else if(e.key === "ArrowLeft" && snakeDir.x !== 1) { snakeDir = {x:-1, y:0}; }
-        else if(e.key === "ArrowRight" && snakeDir.x !== -1) { snakeDir = {x:1, y:0}; }
+        if(e.key === "ArrowUp" && snakeDir.y !== 1) snakeDir = {x:0, y:-1};
+        else if(e.key === "ArrowDown" && snakeDir.y !== -1) snakeDir = {x:0, y:1};
+        else if(e.key === "ArrowLeft" && snakeDir.x !== 1) snakeDir = {x:-1, y:0};
+        else if(e.key === "ArrowRight" && snakeDir.x !== -1) snakeDir = {x:1, y:0};
     }
-    // Tuğla Kırma & Pong Kontrolleri
     if(activeGame === "brick" || activeGame === "pong") {
-        if(isGameWaitingToStart && (e.key === " " || e.key === "Spacebar")) isGameWaitingToStart = false;
+        if(isGameWaitingToStart && e.key === " ") isGameWaitingToStart = false;
         if(e.key === "ArrowLeft" && paddle.x > 0) paddle.x -= 20;
         if(e.key === "ArrowRight" && paddle.x < 320) paddle.x += 20;
         if(e.key === "ArrowUp" && p1Y > 0) p1Y -= 15;
         if(e.key === "ArrowDown" && p1Y < 330) p1Y += 15;
     }
-    // Uzay Savaşı Ateş Etme
     if(activeGame === "space") {
         if(e.key === "ArrowLeft" && playerX > 10) playerX -= 15;
         if(e.key === "ArrowRight" && playerX < 350) playerX += 15;
-        if(e.key === " " || e.key === "Spacebar") { playerLasers.push({x: playerX + 18, y: 350}); playSound("dink"); }
+        if(e.key === " ") playerLasers.push({x: playerX + 18, y: 350});
     }
-    // Cyber Bird Zıplama
     if(activeGame === "flappy") {
-        if(e.key === " " || e.key === "Spacebar" || e.key === "ArrowUp") {
-            if(isGameWaitingToStart) isGameWaitingToStart = false;
-            bird.v = bird.j; playSound("dink");
-        }
+        if(e.key === " " || e.key === "ArrowUp") { if(isGameWaitingToStart) isGameWaitingToStart = false; bird.v = bird.j; }
     }
-    // Dino Zıplama
     if(activeGame === "dino") {
-        if((e.key === " " || e.key === "ArrowUp") && dinoY === 0) { dinoV = 10; playSound("dink"); }
+        if((e.key === " " || e.key === "ArrowUp") && dinoY === 0) dinoV = 10;
     }
-    // Yıldız Avcısı Sağa-Sola Kaçış
     if(activeGame === "catch") {
         if(e.key === "ArrowLeft" && catcherX > 0) catcherX -= 20;
         if(e.key === "ArrowRight" && catcherX < 340) catcherX += 20;
     }
 });
 
-// Canvas Tıklama Olayları (Flappy mobil / Serbest Çizim için)
 const canvasElement = document.getElementById("gameCanvas");
 if (canvasElement) {
     canvasElement.addEventListener("mousedown", () => {
-        if(activeGame === "flappy" && isGameRunning) {
-            if(isGameWaitingToStart) isGameWaitingToStart = false;
-            bird.v = bird.j; playSound("dink");
-        }
+        if(activeGame === "flappy" && isGameRunning) { if(isGameWaitingToStart) isGameWaitingToStart = false; bird.v = bird.j; }
     });
 }
 
-// Buton Olay Dinleyicileri Kurulumu
 if(startBtn) startBtn.addEventListener("click", startActiveGame);
 if(mobileStartBtn) mobileStartBtn.addEventListener("click", startActiveGame);
 
@@ -579,41 +523,4 @@ document.getElementById("selectBlockblast")?.addEventListener("click", () => swi
 document.getElementById("selectDino")?.addEventListener("click", () => switchGame("dino"));
 document.getElementById("selectCatch")?.addEventListener("click", () => switchGame("catch"));
 
-// ============================================================================
-// --- 7. MARKET (SKIN SHOP) YÖNETİMİ ---
-// ============================================================================
-const shopBtn = document.getElementById("shopBtn");
-const shopPanel = document.getElementById("shopPanel");
-if(shopBtn && shopPanel) {
-    shopBtn.addEventListener("click", () => shopPanel.classList.toggle("hidden"));
-}
-document.querySelectorAll(".skin-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-        const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
-        const dbObj = window.database || (typeof firebase !== 'undefined' ? firebase.database() : null);
-
-        if (!authObj || !authObj.currentUser || !dbObj) return alert("Kostüm satın almak için giriş yapmalısın!");
-        
-        const b = e.target; const skin = b.getAttribute("data-skin"); const cost = parseInt(b.getAttribute("data-cost"));
-        const goldDisplay = document.getElementById("totalGold");
-        let currentGold = goldDisplay ? parseInt(goldDisplay.innerText) : 0;
-        
-        if(purchasedSkins.includes(skin)) {
-            currentSkin = skin;
-            document.querySelectorAll(".skin-btn").forEach(x => { if(purchasedSkins.includes(x.getAttribute("data-skin"))) x.innerText = "Seç"; });
-            b.innerText = "Seçili";
-        } else {
-            if(currentGold >= cost) {
-                currentGold -= cost;
-                dbObj.ref('users/' + authObj.currentUser.uid).update({ gold: currentGold });
-                purchasedSkins.push(skin); b.innerText = "Seçili";
-                currentSkin = skin;
-            } else {
-                alert("Yetersiz Altın! Oyun oynayarak altın kazanabilirsin.");
-            }
-        }
-    });
-});
-
-// Sayfa ilk açıldığında sistemi varsayılan olarak Snake (Yılan) oyununa kur
 switchGame("snake");
