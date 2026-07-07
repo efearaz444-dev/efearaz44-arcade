@@ -135,7 +135,7 @@ window.girisYapVeyaKaydol = async () => {
 };
 
 // ============================================================================
-// --- 3. FIREBASE OTO-DİNLEYİCİLER ---
+// --- 3. FIREBASE OTO-DİNLEYİCİLER (EKRAN KİLİDİ KALDIRILMIŞ SÜRÜM) ---
 // ============================================================================
 setTimeout(() => {
     const authObj = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
@@ -144,7 +144,13 @@ setTimeout(() => {
     if (authObj && dbObj) {
         authObj.onAuthStateChanged((user) => {
             if (user) {
-                if (nameModal) nameModal.style.display = "none";
+                // KİLİT NOKTA: Giriş penceresini sadece gizlemiyoruz, ekrandan tamamen söküyoruz 
+                // böylece tıklamaların önüne geçemiyor.
+                if (nameModal) {
+                    nameModal.style.setProperty("display", "none", "important");
+                    nameModal.style.pointerEvents = "none"; // Tıklamaları arkaya geçir
+                }
+                
                 const username = user.email.split('@')[0];
                 if (welcomeText) welcomeText.innerText = `🎮 Hoş geldin, ${username}!`;
                 
@@ -167,7 +173,10 @@ setTimeout(() => {
                     if (allTimeBestEl) allTimeBestEl.innerText = enYuksek + " Puan";
                 });
             } else {
-                if (nameModal) nameModal.style.display = "flex";
+                if (nameModal) {
+                    nameModal.style.display = "flex";
+                    nameModal.style.pointerEvents = "auto";
+                }
             }
         });
     }
