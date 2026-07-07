@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EFEARAZ44 ARCADE</title>
     <link rel="stylesheet" href="./style.css">
 
@@ -42,16 +42,35 @@
         </div>
 
         <nav class="game-selector">
-            <button id="selectSnake" class="active">🐍Yılan (Snake)</button>
-            <button id="selectBrick">🔨Tuğla Kırma</button>
-            <button id="selectSpace">🚀Uzay Savaşı</button>
-            <button id="selectFlappy">🛸Cyber Bird</button>
-            <button id="selectPong">🔴Neon Pong</button>
-            <button id="selectMulti">🌐XOX Multiplayer</button>
-            <button id="selectBlockblast">🟨Block Blast</button>
-            <button id="selectGartic">🎨Neon Çizim</button>
-            <button id="selectDino">🦖Dino Run</button>
-            <button id="selectCatch">🌟Yıldız Avcısı</button>
+            <button id="selectSnake" class="active">🐍 Yılan (Snake)</button>
+            <button id="selectBrick">🔨 Tuğla Kırma</button>
+            <button id="selectSpace">🚀 Uzay Savaşı</button>
+            <button id="selectFlappy">🛸 Cyber Bird</button>
+            <button id="selectPong">🔴 Neon Pong</button>
+            <button id="selectMulti">🌐 XOX Odası</button>
+            <button id="selectBlockblast">🟨 Block Blast</button>
+            <button id="selectGartic">🎨 Neon Çizim</button>
+            <button id="selectDino">🦖 Dino Run</button>
+            <button id="selectCatch">🌟 Yıldız Avcısı</button>
+            <button id="selectCyberbird">🦅 Cyber Bird Pro</button>
+            <button id="selectDinorun2">🏃 Dino Run V2</button>
+            <button id="selectStarhunter">🌌 Yıldız Avcısı Advance</button>
+            <button id="selectNeondraw">🖌️ Neon Tuval</button>
+            <button id="selectCatchpro">💎 Element Yakala</button>
+            <button id="selectSnakevs">⚔️ Yılan Düellosu (2P)</button>
+            <button id="selectChess">👑 Neon Satranç</button>
+            <button id="selectMeteors">☄️ Göktaşı Kaçışı</button>
+            <button id="selectHexrunner">🏁 Hex Runner</button>
+            <button id="selectNeonhelix">🌀 Helix Spiral</button>
+            <button id="selectBithopper">🔋 Bit Hopper</button>
+            <button id="selectGridout">🧠 Grid Out Hafıza</button>
+            <button id="selectCoinrain">🪙 Para Yağmuru</button>
+            <button id="selectSpeeddriver">🏎️ Speed Driver</button>
+            <button id="selectMathrush">🧮 Math Rush</button>
+            <button id="selectColormatch">🎨 Renk Eşleme</button>
+            <button id="selectSoundwave">🌊 Sound Wave</button>
+            <button id="selectMultixox">❌ Çevrimiçi Klasik XOX</button>
+            <button id="selectMultitank">🛡️ Neon Tank Savaşı</button>
         </nav>
 
         <main class="main-arena">
@@ -59,14 +78,14 @@
                 <h3>🏆 En İyiler</h3>
                 <div class="score-row"><span>👑 Rekor:</span> <span id="allTimeBest">Yükleniyor...</span></div>
                 <hr>
-                <div id="leaderboardContainer" class="en-iyiler-listesi">
-                    <div class="score-row"><span>🐍 Yılan:</span> <span id="snakeBest">0 Puan</span></div>
-                    <div class="score-row"><span>🧱 Tuğla:</span> <span id="brickBest">0 Puan</span></div>
-                    <div class="score-row"><span>🚀 Uzay:</span> <span id="spaceBest">0 Puan</span></div>
-                    <div class="score-row"><span>🛸 Bird:</span> <span id="flappyBest">0 Puan</span></div>
-                    <div class="score-row"><span>🔴 Pong:</span> <span id="pongBest">0 Puan</span></div>
-                    <div class="score-row"><span>🟨 Blast:</span> <span id="blockblastBest">0 Puan</span></div>
-                </div>
+                <div class="score-row"><span>🐍 Yılan:</span> <span id="snakeBest">0 Puan</span></div>
+                <div class="score-row"><span>🧱 Tuğla:</span> <span id="brickBest">0 Puan</span></div>
+                <div class="score-row"><span>🚀 Uzay:</span> <span id="spaceBest">0 Puan</span></div>
+                <div class="score-row"><span>🛸 Bird:</span> <span id="flappyBest">0 Puan</span></div>
+                <div class="score-row"><span>🔴 Pong:</span> <span id="pongBest">0 Puan</span></div>
+                <div class="score-row"><span>🟨 Blast:</span> <span id="blockblastBest">0 Puan</span></div>
+                <div class="score-row"><span>🦖 Dino:</span> <span id="dinoBest">0 Puan</span></div>
+                <div class="score-row"><span>🌟 Avcı:</span> <span id="catchBest">0 Puan</span></div>
             </aside>
 
             <section class="game-core">
@@ -124,8 +143,10 @@
         </footer>
     </div>
 
-    <!-- KÜTÜPHANELER VE SCRIPTLER -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <script>
         particlesJS('particles-js', {
             "particles": {
@@ -142,11 +163,6 @@
         });
     </script>
 
-    <!-- Firebase SDK (Tekilleştirilmiş Sürüm v8) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <!-- Yerel JavaScript Dosyaların -->
     <script src="js/firebase-config.js"></script>
     <script src="controls.js"></script>
     <script src="js/firebase-multi.js"></script>
