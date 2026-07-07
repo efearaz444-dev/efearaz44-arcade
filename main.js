@@ -14,6 +14,8 @@ const brickBestCtx = document.getElementById("brickBest"); const spaceBestCtx = 
 const flappyBestCtx = document.getElementById("flappyBest"); const pongBestCtx = document.getElementById("pongBest");
 const mPanel = document.getElementById("multiplayerPanel");
 
+let mevcutKullanici = "";
+let mevcutSifre = "";
 let activeGame = "snake"; let score = 0; let gameInterval; let isGameRunning = false; let isGameWaitingToStart = false; const gridSize = 20;
 let currentPlayer = ""; let totalGold = parseInt(localStorage.getItem("arc_gold")) || 0;
 let ownedSkins = JSON.parse(localStorage.getItem("arc_skins")) || ["classic"]; let currentSkin = localStorage.getItem("arc_current_skin") || "classic";
@@ -127,6 +129,7 @@ function toggleBGM() {
 
 // --- BAŞLANGIÇ YÖNETİMİ ---
 window.onload = function() {
+    globalLeaderboardCek();
     updateGoldUI(); updateLeaderboardUI(); updateShopUI();
     const savedName = localStorage.getItem("arc_username");
     if (savedName) { currentPlayer = savedName; if(nameModal) nameModal.style.display = "none"; if(welcomeText) welcomeText.innerText = "🎮 Efearaz44 Arcade'e Hoş geldin!"; }
@@ -167,6 +170,12 @@ if(saveNameBtn) {
         const kontrolIsmi = name.toLowerCase().replace(/\s+/g, ''); 
         const yasakliBulundu = yasakliKelimeler.some(kelime => kontrolIsmi.includes(kelime.toLowerCase().replace(/\s+/g, '')));
         if (yasakliBulundu) { alert("Lütfen düzgün bir kullanıcı adı giriniz! 🚫"); return; }
+
+        // --- HİÇBİR SORUN YOKSA ŞİMDİ HAFIZAYA ALIP TABLOYU ÇEKELİM ---
+        mevcutKullanici = name;
+        mevcutSifre = sifre;
+        globalLeaderboardCek();
+        // -----------------------------------------------------------
 
         if (typeof firebase !== "undefined") {
             const db = firebase.database();
@@ -1028,14 +1037,97 @@ function gameOver(silent = false) {
     if(arcadeScores[activeGame] !== undefined && score > arcadeScores[activeGame]) { arcadeScores[activeGame] = score; } 
     let max = Math.max(arcadeScores.snake||0, arcadeScores.brick||0, arcadeScores.space||0, arcadeScores.flappy||0, arcadeScores.pong||0, arcadeScores.blockblast||0, arcadeScores.dino||0, arcadeScores.catch||0); 
     if(max === score && score > 0) arcadeScores.allTimePlayer = currentPlayer + " (" + activeGame.toUpperCase() + ")"; 
-    localStorage.setItem("arc_scores", JSON.stringify(arcadeScores)); updateLeaderboardUI(); 
+    
+    // Yerel tarayıcı hafızasına kaydetme
+    localStorage.setItem("arc_scores", JSON.stringify(arcadeScores)); 
+    
+    // --- BİZİM EKLEDİĞİMİZ KISIM: KÜRESEL SKOR KAYDI ---
+    // Eğer kullanıcı giriş yaptıysa ve skor 0'dan büyükse Firebase'e fırlat
+    if (mevcutKullanici && mevcutKullanici !== "" && score > 0) {
+        globalSkorKaydet(mevcutKullanici, mevcutSifre, score);
+    }
+    // --------------------------------------------------
+
+    updateLeaderboardUI(); 
     if(!silent) { ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "#ff1744"; ctx.font = "bold 30px Arial"; ctx.textAlign = "center"; ctx.fillText("OYUN BİTTİ!", canvas.width/2, canvas.height/2); }
 }
 
+// --- LOKAL SKOR ARABİRİMİ (ORİJİNAL YAPISINDA KORUNDU) ---
 function updateLeaderboardUI() { 
-    if(snakeBestCtx) snakeBestCtx.innerText = (arcadeScores.snake || 0) + " Puan"; if(brickBestCtx) brickBestCtx.innerText = (arcadeScores.brick || 0) + " Puan"; if(spaceBestCtx) spaceBestCtx.innerText = (arcadeScores.space || 0) + " Puan"; if(flappyBestCtx) flappyBestCtx.innerText = (arcadeScores.flappy || 0) + " Puan"; if(pongBestCtx) pongBestCtx.innerText = (arcadeScores.pong || 0) + " Puan"; 
+    if(snakeBestCtx) snakeBestCtx.innerText = (arcadeScores.snake || 0) + " Puan"; 
+    if(brickBestCtx) brickBestCtx.innerText = (arcadeScores.brick || 0) + " Puan"; 
+    if(spaceBestCtx) spaceBestCtx.innerText = (arcadeScores.space || 0) + " Puan"; 
+    if(flappyBestCtx) flappyBestCtx.innerText = (arcadeScores.flappy || 0) + " Puan"; 
+    if(pongBestCtx) pongBestCtx.innerText = (arcadeScores.pong || 0) + " Puan"; 
+    
     let max = Math.max(arcadeScores.snake||0, arcadeScores.brick||0, arcadeScores.space||0, arcadeScores.flappy||0, arcadeScores.pong||0, arcadeScores.blockblast||0, arcadeScores.dino||0, arcadeScores.catch||0); 
     if(allTimeBestCtx) allTimeBestCtx.innerText = max > 0 ? arcadeScores.allTimePlayer + " - " + max + " Puan" : "Henüz yok..."; 
+}
+
+
+// ============================================================================
+// --- 3. ADIM: KÜRESEL FİRİBASE MOTOR FONKSİYONLARI (DOSYANIN EN ALTINA EKLE) ---
+// ============================================================================
+
+function globalSkorKaydet(kullaniciAdi, sifre, alinanSkor) {
+    const userRef = firebase.database().ref('users/' + kullaniciAdi);
+
+    userRef.once('value').then((snapshot) => {
+        const userData = snapshot.val();
+        
+        // Kullanıcı adı boşsa veya şifre veritabanındakiyle eşleşiyorsa rekor kontrolü yap
+        if (!userData || userData.sifre === sifre) {
+            const eskiRekor = userData ? (userData.enYuksekSkor || 0) : 0;
+
+            if (alinanSkor > eskiRekor) {
+                userRef.set({
+                    kullaniciAdi: kullaniciAdi,
+                    sifre: sifre,
+                    enYuksekSkor: alinanSkor
+                }).then(() => {
+                    console.log("Global rekor güncellendi!");
+                    globalLeaderboardCek(); // Tabloyu anında güncelle
+                });
+            }
+        } else {
+            alert("Bu kullanıcı adı başka bir şifreyle kayıtlı! Skorunuz küresel tabloya işlenmedi.");
+        }
+    });
+}
+
+function globalLeaderboardCek() {
+    // Veritabanından en yüksek skora göre sıralayıp ilk 10 kişiyi getiriyoruz
+    firebase.database().ref('users')
+        .orderByChild('enYuksekSkor')
+        .limitToLast(10)
+        .once('value').then((snapshot) => {
+            
+            let oyuncuListesi = [];
+            snapshot.forEach((childSnapshot) => {
+                oyuncuListesi.push(childSnapshot.val());
+            });
+
+            // Büyükten küçüğe sıralamak için ters çeviriyoruz
+            oyuncuListesi.reverse();
+
+            // HTML dosyasında kendi ellerinle açacağın listenin kapsayıcı ID'si
+            const panoContainer = document.getElementById("globalPano");
+            if (!panoContainer) return;
+
+            panoContainer.innerHTML = "";
+
+            oyuncuListesi.forEach((oyuncu, index) => {
+                let sira = index === 0 ? "👑" : (index + 1) + ".";
+                
+                // HTML tasarımına göre bu satırın yapısını dilediğin gibi süsleyebilirsin kirve
+                panoContainer.innerHTML += `
+                    <div class="score-row">
+                        <span>${sira} ${oyuncu.kullaniciAdi}</span>
+                        <span>${oyuncu.enYuksekSkor} Puan</span>
+                    </div>
+                `;
+            });
+        });
 }
 
 function updateShopUI() { 
