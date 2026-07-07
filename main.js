@@ -476,49 +476,93 @@ function drawCatch() {
 }
 
 // ============================================================================
-// --- 5. EVENT LISTENERS ---
+// --- 5. EVENT LISTENERS (KESİN ÇALIŞTIRMA VE ODAKLANMA SÜRÜMÜ) ---
 // ============================================================================
-window.addEventListener("keydown", (e) => {
-    if(activeGame === "snake") {
-        if(e.key === "ArrowUp" && snakeDir.y !== 1) snakeDir = {x:0, y:-1};
-        else if(e.key === "ArrowDown" && snakeDir.y !== -1) snakeDir = {x:0, y:1};
-        else if(e.key === "ArrowLeft" && snakeDir.x !== 1) snakeDir = {x:-1, y:0};
-        else if(e.key === "ArrowRight" && snakeDir.x !== -1) snakeDir = {x:1, y:0};
-    }
-    if(activeGame === "brick" || activeGame === "pong") {
-        if(isGameWaitingToStart && e.key === " ") isGameWaitingToStart = false;
-        if(e.key === "ArrowLeft" && paddle.x > 0) paddle.x -= 20;
-        if(e.key === "ArrowRight" && paddle.x < 320) paddle.x += 20;
-        if(e.key === "ArrowUp" && p1Y > 0) p1Y -= 15;
-        if(e.key === "ArrowDown" && p1Y < 330) p1Y += 15;
-    }
-    if(activeGame === "space") {
-        if(e.key === "ArrowLeft" && playerX > 10) playerX -= 15;
-        if(e.key === "ArrowRight" && playerX < 350) playerX += 15;
-        if(e.key === " ") playerLasers.push({x: playerX + 18, y: 350});
-    }
-    if(activeGame === "flappy") {
-        if(e.key === " " || e.key === "ArrowUp") { if(isGameWaitingToStart) isGameWaitingToStart = false; bird.v = bird.j; }
-    }
-    if(activeGame === "dino") {
-        if((e.key === " " || e.key === "ArrowUp") && dinoY === 0) dinoV = 10;
-    }
-    if(activeGame === "catch") {
-        if(e.key === "ArrowLeft" && catcherX > 0) catcherX -= 20;
-        if(e.key === "ArrowRight" && catcherX < 340) catcherX += 20;
-    }
-});
 
+// Klavyeden gelen tuşları doğrudan yakala ve sayfayı kaydırmasını engelle
+window.addEventListener("keydown", (e) => {
+    // Eğer oyun oynamıyorsa tuşları dinleme
+    if (!isGameRunning) return;
+
+    // Yön tuşları ve Boşluk (Space) basıldığında sayfanın aşağı yukarı kaymasını engelle
+    if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        e.preventDefault();
+    }
+
+    // SNAKE (YILAN) KONTROLLERİ
+    if(activeGame === "snake") {
+        if((e.key === "ArrowUp" || e.key === "w" || e.key === "W") && snakeDir.y !== 1) snakeDir = {x:0, y:-1};
+        else if((e.key === "ArrowDown" || e.key === "s" || e.key === "S") && snakeDir.y !== -1) snakeDir = {x:0, y:1};
+        else if((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && snakeDir.x !== 1) snakeDir = {x:-1, y:0};
+        else if((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && snakeDir.x !== -1) snakeDir = {x:1, y:0};
+    }
+    
+    // BRICK & PONG KONTROLLERİ
+    if(activeGame === "brick" || activeGame === "pong") {
+        if(isGameWaitingToStart && (e.key === " " || e.code === "Space")) isGameWaitingToStart = false;
+        if((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && paddle.x > 0) paddle.x -= 25;
+        if((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && paddle.x < 320) paddle.x += 25;
+        if(e.key === "ArrowUp" && p1Y > 0) p1Y -= 20;
+        if(e.key === "ArrowDown" && p1Y < 330) p1Y += 20;
+    }
+    
+    // SPACE (UZAY) KONTROLLERİ
+    if(activeGame === "space") {
+        if((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && playerX > 10) playerX -= 20;
+        if((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && playerX < 350) playerX += 20;
+        if(e.key === " " || e.code === "Space") playerLasers.push({x: playerX + 18, y: 350});
+    }
+    
+    // FLAPPY BIRD KONTROLLERİ
+    if(activeGame === "flappy") {
+        if(e.key === " " || e.code === "Space" || e.key === "ArrowUp") { 
+            if(isGameWaitingToStart) isGameWaitingToStart = false; 
+            bird.v = bird.j; 
+        }
+    }
+    
+    // DINO RUN KONTROLLERİ
+    if(activeGame === "dino") {
+        if((e.key === " " || e.code === "Space" || e.key === "ArrowUp") && dinoY === 0) dinoV = 11;
+    }
+    
+    // CATCH KONTROLLERİ
+    if(activeGame === "catch") {
+        if((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && catcherX > 0) catcherX -= 25;
+        if((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && catcherX < 340) catcherX += 25;
+    }
+}, { passive: false });
+
+// Mobil Ekran Dokunma ve Tıklama Desteği
 const canvasElement = document.getElementById("gameCanvas");
 if (canvasElement) {
-    canvasElement.addEventListener("mousedown", () => {
-        if(activeGame === "flappy" && isGameRunning) { if(isGameWaitingToStart) isGameWaitingToStart = false; bird.v = bird.j; }
+    // Tıklandığında oyunu canlandır ve odakla
+    canvasElement.addEventListener("click", () => {
+        if(!isGameRunning) return;
+        if(isGameWaitingToStart) isGameWaitingToStart = false;
+        
+        if(activeGame === "flappy") bird.v = bird.j;
+        if(activeGame === "dino" && dinoY === 0) dinoV = 11;
     });
+    
+    // Mobil dokunmatik ekranlar için ekstra tetikleyici
+    canvasElement.addEventListener("touchstart", (e) => {
+        if(!isGameRunning) return;
+        if(isGameWaitingToStart) isGameWaitingToStart = false;
+        
+        if(activeGame === "flappy") bird.v = bird.j;
+        if(activeGame === "dino" && dinoY === 0) dinoV = 11;
+    }, { passive: true });
 }
 
-if(startBtn) startBtn.addEventListener("click", startActiveGame);
-if(mobileStartBtn) mobileStartBtn.addEventListener("click", startActiveGame);
+// Butonları Tetikleyicilere Bağlama Bölümü
+const sBtn = document.getElementById("startBtn");
+const mStartBtn = document.getElementById("mobileStartBtn");
 
+if(sBtn) sBtn.addEventListener("click", () => { startActiveGame(); if(canvasElement) canvasElement.focus(); });
+if(mStartBtn) mStartBtn.addEventListener("click", () => { startActiveGame(); if(canvasElement) canvasElement.focus(); });
+
+// Menüden oyun değiştirme butonlarını bağla
 document.getElementById("selectSnake")?.addEventListener("click", () => switchGame("snake"));
 document.getElementById("selectBrick")?.addEventListener("click", () => switchGame("brick"));
 document.getElementById("selectSpace")?.addEventListener("click", () => switchGame("space"));
@@ -528,4 +572,5 @@ document.getElementById("selectBlockblast")?.addEventListener("click", () => swi
 document.getElementById("selectDino")?.addEventListener("click", () => switchGame("dino"));
 document.getElementById("selectCatch")?.addEventListener("click", () => switchGame("catch"));
 
+// Oyunu yılan oyunuyla hazır başlat
 switchGame("snake");
