@@ -1,5 +1,5 @@
 // ============================================================================
-// --- REALTIME FIREBASE MULTIPLAYER XOX MOTORU (KIRMIZILIKSIZ SÜRÜM) ---
+// --- REALTIME FIREBASE MULTIPLAYER OYUN MOTORU (FULL ENTEGRE SÜRÜM) ---
 // ============================================================================
 
 // main.js'deki global değişkenleri ve fonksiyonları güvenli şekilde pencereden çekiyoruz
@@ -54,7 +54,8 @@ if (odaOlusturBtn) {
             sira: "X", 
             misafirKatildi: false, 
             sonHamle: -1,
-            isimX: oyuncuX_Isim, // Artık senin ismin gidiyor
+            oyunTipi: window.currentMultiGameType || "xox",
+            isimX: oyuncuX_Isim,
             isimO: oyuncuO_Isim
         });
         odayiDizle(aktifOdaKod);
@@ -72,8 +73,7 @@ if (odayaKatilBtn) {
             if (snapshot.exists()) {
                 aktifOdaKod = girilenKod; 
                 benimRolum = "O";
-                // --- İŞTE DEĞİŞİKLİK BURADA ---
-                oyuncuO_Isim = currentPlayer || "Oyuncu O"; // currentPlayer değişkenini direkt kullanıyoruz
+                oyuncuO_Isim = currentPlayer || "Oyuncu O";
                 
                 window.activeGame = "multi";
                 window.score = 0; if(document.getElementById("score")) document.getElementById("score").innerText = "0";
@@ -86,12 +86,12 @@ if (odayaKatilBtn) {
                 if(multiBtn) multiBtn.classList.add("active");
                 
                 const welcomeTextEl = document.getElementById("welcomeText");
-                if(welcomeTextEl) welcomeTextEl.innerText = "🌐 Multiplayer X-O-X Arenası";
+                if(welcomeTextEl) welcomeTextEl.innerText = "🌐 Multiplayer Arenası";
                 
                 if (database && aktifOdaKod) {
                     database.ref('odalar/' + aktifOdaKod).update({ 
                         misafirKatildi: true,
-                        isimO: oyuncuO_Isim // Buraya artık senin ismin gidiyor
+                        isimO: oyuncuO_Isim
                     }).then(() => {
                         if (typeof odayiDizle === "function") odayiDizle(aktifOdaKod);
                     }).catch(err => console.log("Veri güncellenemedi:", err));
@@ -109,15 +109,26 @@ function odayiDizle(roomCode) {
     database.ref('odalar/' + roomCode).on('value', (snapshot) => {
         const data = snapshot.val(); 
         if (!data) return;
-        xoxTahta = data.tahta; 
-        mevcutSira = data.sira;
+        
+        xoxTahta = data.tahta || ["", "", "", "", "", "", "", "", ""]; 
+        mevcutSira = data.sira || "X";
         oyuncuX_Isim = data.isimX || "Oyuncu X";
         oyuncuO_Isim = data.isimO || "Oyuncu O";
         
-        drawXOX();
+        // Eğer oyun tipi XOX ise çizimi buradan yapıyoruz
+        let oyun = data.oyunTipi || "xox";
+        window.currentMultiGameType = oyun;
+        
+        if (oyun === "xox") {
+            drawXOX();
+            checkXOXWinner();
+        } else if (oyun === "snakeVersus" && data.snakeData) {
+            if (typeof window.updateSnakeVersus === "function") window.updateSnakeVersus(data.snakeData);
+        } else if (oyun === "neonChess" && data.chessData) {
+            if (typeof window.updateChessBoard === "function") window.updateChessBoard(data.chessData);
+        }
         
         if (data.misafirKatildi && durumYazisi && roomCode === aktifOdaKod) { 
-            // X veya O yerine kimin sırasıysa direkt onun ismini seçiyoruz
             let aktifOyuncuIsmi = (mevcutSira === "X") ? oyuncuX_Isim : oyuncuO_Isim;
             let siraMetni = (benimRolum === mevcutSira) ? 'SENİN SIRAN!' : 'RAKİBİN SIRASI...';
             
@@ -126,10 +137,10 @@ function odayiDizle(roomCode) {
                 <strong style="color: #fff">VS</strong> 
                 <span style="color: #ff1744; font-weight: bold;">${oyuncuO_Isim}</span>
                 <br><br>
+                Mod: <b style="color: #00ffff; text-transform: uppercase;">${oyun}</b><br>
                 Sıra: <b style="color: #ffca28">${aktifOyuncuIsmi}</b> kullanıcısında. (${siraMetni})
             `; 
         }
-        checkXOXWinner();
     });
 }
 
@@ -146,10 +157,7 @@ function drawXOX() {
         ctx.beginPath(); ctx.moveTo(0, ofs + i*120); ctx.lineTo(c.width, ofs + i*120); ctx.stroke();
     }
     
-// --- ÜST TARAFIN GÜVENLİ HALE GETİRİLMİŞ SÜRÜMÜ ---
-    const cEl = document.getElementById("gameCanvas");
-    const canWidth = cEl ? cEl.width : 400; 
-    
+    const canWidth = c.width; 
     ctx.fillStyle = "rgba(255,255,255,0.07)";
     ctx.fillRect(0, 0, canWidth, ofs);
     ctx.font = "bold 13px sans-serif";
@@ -157,7 +165,6 @@ function drawXOX() {
     ctx.textAlign = "right"; ctx.fillStyle = "#ff1744"; ctx.fillText(oyuncuO_Isim + " (O)  ", canWidth - 10, ofs/2 + 4);
     ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.fillText("VS", canWidth/2, ofs/2 + 4);
 
-    // --- TAŞLARIN ÇİZİMİ (KIRMIZILIKSIZ DÖNGÜ) ---
     const aktifTahta = (typeof xoxTahta !== "undefined" && Array.isArray(xoxTahta)) ? xoxTahta : ["", "", "", "", "", "", "", "", ""];
     
     aktifTahta.forEach((val, index) => {
@@ -187,9 +194,7 @@ function checkXOXWinner() {
     let wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     for (let w of wins) {
         if(xoxTahta[w[0]] && xoxTahta[w[0]] === xoxTahta[w[1]] && xoxTahta[w[0]] === xoxTahta[w[2]]) {
-            // Kazanan harfe göre direkt ismi çekiyoruz
             let kazananIsim = xoxTahta[w[0]] === "X" ? oyuncuX_Isim : oyuncuO_Isim;
-            
             alert("👑 Oyun Bitti! Kazanan: " + kazananIsim);
             
             if(xoxTahta[w[0]] === benimRolum && typeof window.addGold === "function") window.addGold(100);
@@ -209,17 +214,28 @@ function checkXOXWinner() {
     return false;
 }
 
+// ============================================================================
+// --- MERKEZİ MULTIPLAYER TIKLAMA VE MOBİL DOKUNMA YÖNETİCİSİ ---
+// ============================================================================
 const canvasEl = document.getElementById("gameCanvas");
 if (canvasEl) {
-    const handleXOXClick = (clientX, clientY) => {
-        if(getGlobal("activeGame") === "multi") {
-            let rect = canvasEl.getBoundingClientRect();
-            // Ölçeklendirme hesabı (mobilde ekran boyutu farklı olabildiği için)
-            let scaleX = canvasEl.width / rect.width;
-            let scaleY = canvasEl.height / rect.height;
-            let x = (clientX - rect.left) * scaleX;
-            let y = (clientY - rect.top) * scaleY;
-            
+    const handleMultiClick = (clientX, clientY) => {
+        if (getGlobal("activeGame") !== "multi") return;
+        
+        let rect = canvasEl.getBoundingClientRect();
+        let scaleX = canvasEl.width / rect.width;
+        let scaleY = canvasEl.height / rect.height;
+        let x = (clientX - rect.left) * scaleX;
+        let y = (clientY - rect.top) * scaleY;
+        
+        let oyun = window.currentMultiGameType || "xox";
+        
+        if (oyun === "snakeVersus") {
+            if (typeof window.handleSnakeClick === "function") window.handleSnakeClick(x, y);
+        } else if (oyun === "neonChess") {
+            if (typeof window.handleChessClick === "function") window.handleChessClick(x, y);
+        } else {
+            // Standart Klasik XOX Hesabı
             let ofs = 40;
             if (y < ofs) return; 
             let c = Math.floor(x / (canvasEl.width / 3)); 
@@ -230,43 +246,25 @@ if (canvasEl) {
         }
     };
 
-    // Mouse için
-    canvasEl.addEventListener("click", e => handleXOXClick(e.clientX, e.clientY));
+    // Fare (PC) Tıklama Olayı
+    canvasEl.addEventListener("click", (e) => handleMultiClick(e.clientX, e.clientY));
     
-    // Mobil için (İşte eksik olan parça burası)
-    canvasEl.addEventListener("touchstart", e => {
+    // Mobil (Telefon/Tablet) Dokunma Olayı
+    canvasEl.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        handleXOXClick(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
+        if (e.touches && e.touches[0]) {
+            handleMultiClick(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false });
 }
+
 // ============================================================================
-// --- YENİ MULTIPLAYER MODLARI (SNAKE VERSUS & NEON SATRANÇ) ---
+// --- YENİ MULTIPLAYER MODLARI VE VERİ PAKETLEME YÖNETİCİLERİ ---
 // ============================================================================
 
-// Snake Versus ve Satranç için özel veri dinleyicileri
-database.ref('odalar').on('child_changed', (snapshot) => {
-    const data = snapshot.val();
-    if (snapshot.key === aktifOdaKod) {
-        
-        // --- MOD 1: SNAKE VERSUS (YILAN DÜELLOSU) ---
-        if (data.oyunTipi === "snakeVersus" && data.snakeData) {
-            if (typeof window.updateSnakeVersus === "function") {
-                window.updateSnakeVersus(data.snakeData);
-            }
-        }
-
-        // --- MOD 2: NEON SATRANÇ (CHESS LITE) ---
-        if (data.oyunTipi === "neonChess" && data.chessData) {
-            if (typeof window.updateChessBoard === "function") {
-                window.updateChessBoard(data.chessData);
-            }
-        }
-    }
-});
-
-// Multiplayer Hamle Gönderme Fonksiyonları (Bunu da dosyanın en altına ekle)
+// Multiplayer Hamle Gönderme Fonksiyonları 
 window.sendMultiMove = (oyunTipi, hamleVerisi) => {
-    if (!aktifOdaKod) return;
+    if (!aktifOdaKod || !database) return;
     let updateObj = {};
     
     if (oyunTipi === "snakeVersus") updateObj = { snakeData: hamleVerisi };
@@ -275,33 +273,10 @@ window.sendMultiMove = (oyunTipi, hamleVerisi) => {
     database.ref('odalar/' + aktifOdaKod).update(updateObj);
 };
 
-// Oda seçimi yapıldığında Firebase'deki oyun tipini güncellemek için:
+// Oda kurulduğunda veya menüden oyun seçildiğinde Firebase tipini senkronize etmek için:
 window.setMultiGameType = (type) => {
-    if (aktifOdaKod) {
+    if (aktifOdaKod && database) {
+        window.currentMultiGameType = type;
         database.ref('odalar/' + aktifOdaKod).update({ oyunTipi: type });
     }
 };
-
-// ============================================================================
-// --- GÜNCEL TIKLAMA YÖNETİCİSİ (Bunu mevcut handleXOXClick ile değiştir) ---
-// ============================================================================
-const canvasEl = document.getElementById("gameCanvas");
-if (canvasEl) {
-    canvasEl.addEventListener("click", (e) => {
-        let rect = canvasEl.getBoundingClientRect();
-        let x = (e.clientX - rect.left) * (canvasEl.width / rect.width);
-        let y = (e.clientY - rect.top) * (canvasEl.height / rect.height);
-        
-        // Hangi oyundaysak ona göre hamleyi yönlendir
-        let oyun = window.currentMultiGameType || "xox";
-        
-        if (oyun === "snakeVersus") {
-            if (typeof window.handleSnakeClick === "function") window.handleSnakeClick(x, y);
-        } else if (oyun === "neonChess") {
-            if (typeof window.handleChessClick === "function") window.handleChessClick(x, y);
-        } else {
-            // Standart XOX
-            handleXOXClick(e.clientX, e.clientY);
-        }
-    });
-}
