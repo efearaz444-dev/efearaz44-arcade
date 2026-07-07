@@ -239,3 +239,69 @@ if (canvasEl) {
         handleXOXClick(e.touches[0].clientX, e.touches[0].clientY);
     }, {passive: false});
 }
+// ============================================================================
+// --- YENİ MULTIPLAYER MODLARI (SNAKE VERSUS & NEON SATRANÇ) ---
+// ============================================================================
+
+// Snake Versus ve Satranç için özel veri dinleyicileri
+database.ref('odalar').on('child_changed', (snapshot) => {
+    const data = snapshot.val();
+    if (snapshot.key === aktifOdaKod) {
+        
+        // --- MOD 1: SNAKE VERSUS (YILAN DÜELLOSU) ---
+        if (data.oyunTipi === "snakeVersus" && data.snakeData) {
+            if (typeof window.updateSnakeVersus === "function") {
+                window.updateSnakeVersus(data.snakeData);
+            }
+        }
+
+        // --- MOD 2: NEON SATRANÇ (CHESS LITE) ---
+        if (data.oyunTipi === "neonChess" && data.chessData) {
+            if (typeof window.updateChessBoard === "function") {
+                window.updateChessBoard(data.chessData);
+            }
+        }
+    }
+});
+
+// Multiplayer Hamle Gönderme Fonksiyonları (Bunu da dosyanın en altına ekle)
+window.sendMultiMove = (oyunTipi, hamleVerisi) => {
+    if (!aktifOdaKod) return;
+    let updateObj = {};
+    
+    if (oyunTipi === "snakeVersus") updateObj = { snakeData: hamleVerisi };
+    else if (oyunTipi === "neonChess") updateObj = { chessData: hamleVerisi };
+    
+    database.ref('odalar/' + aktifOdaKod).update(updateObj);
+};
+
+// Oda seçimi yapıldığında Firebase'deki oyun tipini güncellemek için:
+window.setMultiGameType = (type) => {
+    if (aktifOdaKod) {
+        database.ref('odalar/' + aktifOdaKod).update({ oyunTipi: type });
+    }
+};
+
+// ============================================================================
+// --- GÜNCEL TIKLAMA YÖNETİCİSİ (Bunu mevcut handleXOXClick ile değiştir) ---
+// ============================================================================
+const canvasEl = document.getElementById("gameCanvas");
+if (canvasEl) {
+    canvasEl.addEventListener("click", (e) => {
+        let rect = canvasEl.getBoundingClientRect();
+        let x = (e.clientX - rect.left) * (canvasEl.width / rect.width);
+        let y = (e.clientY - rect.top) * (canvasEl.height / rect.height);
+        
+        // Hangi oyundaysak ona göre hamleyi yönlendir
+        let oyun = window.currentMultiGameType || "xox";
+        
+        if (oyun === "snakeVersus") {
+            if (typeof window.handleSnakeClick === "function") window.handleSnakeClick(x, y);
+        } else if (oyun === "neonChess") {
+            if (typeof window.handleChessClick === "function") window.handleChessClick(x, y);
+        } else {
+            // Standart XOX
+            handleXOXClick(e.clientX, e.clientY);
+        }
+    });
+}
