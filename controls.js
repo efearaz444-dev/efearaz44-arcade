@@ -1,8 +1,6 @@
 // ============================================================================
 // --- MOBİL BASILI TUTMA VE GELİŞMİŞ HIZLANDIRMA MOTORU (CONTROLS.JS) ---
 // ============================================================================
-
-// Global değişkenleri window üzerine tanımlıyoruz ki main.js ve diğerleri görebilsin
 window.dx = 0;
 window.dy = 0;
 window.gridSize = 20;
@@ -14,76 +12,94 @@ const bRight = document.getElementById("btnRight");
 const bAction = document.getElementById("btnAction");
 
 let mobilHareketInterval = null;
-const MOBIL_HIZ_DONGUSU_MS = 45;
+const MOBIL_HIZ_DONGUSU_MS = 25; // 45ms'den 25ms'ye düşürülerek daha akıcı basılı tutma sağlandı
 
-// --- MOBİL ÖZEL HAREKET FONKSİYONLARI ---
 function mobilMoveLeft() {
-    // Canvas kontrolünü global nesnelerden alıyoruz
-    if (typeof paddle !== "undefined" && activeGame === "brick" && paddle.x > 0) paddle.x -= (paddle.speed * 1.5);
-    else if (typeof playerShip !== "undefined" && activeGame === "space" && playerShip.x > 0) playerShip.x -= (playerShip.speed * 1.5);
-    else if (typeof pongPad !== "undefined" && activeGame === "pong" && pongPad.y > 0) pongPad.y -= (pongPad.speed * 1.4);
-    else if (typeof moveLeft === "function") moveLeft(); 
+    if (!window.isGameRunning) return;
+    const g = window.activeGame;
+    
+    // main.js'deki global değişken adlarıyla tam senkronizasyon sağlandı
+    if (g === "brick" || g === "pong") { if(window.paddle && window.paddle.x > 0) window.paddle.x -= 8; }
+    else if (g === "space") { if(window.playerX !== undefined && window.playerX > 10) window.playerX -= 7; }
+    else if (g === "catch") { if(window.catcherX !== undefined && window.catcherX > 0) window.catcherX -= 8; }
 }
 
 function mobilMoveRight() {
-    const canvas = document.getElementById("gameCanvas");
-    if (typeof paddle !== "undefined" && activeGame === "brick" && paddle.x < canvas.width - paddle.width) paddle.x += (paddle.speed * 1.5);
-    else if (typeof playerShip !== "undefined" && activeGame === "space" && playerShip.x < canvas.width - playerShip.width) playerShip.x += (playerShip.speed * 1.5);
-    else if (typeof pongPad !== "undefined" && activeGame === "pong" && pongPad.y < canvas.height - pongPad.height) pongPad.y += (pongPad.speed * 1.4);
-    else if (typeof moveRight === "function") moveRight();
+    if (!window.isGameRunning) return;
+    const g = window.activeGame;
+    
+    if (g === "brick" || g === "pong") { if(window.paddle && window.paddle.x < 320) window.paddle.x += 8; }
+    else if (g === "space") { if(window.playerX !== undefined && window.playerX < 350) window.playerX += 7; }
+    else if (g === "catch") { if(window.catcherX !== undefined && window.catcherX < 340) window.catcherX += 8; }
 }
 
-// --- DÖNGÜ BAŞLATMA ---
 function mobilDonguBaslat(fonksiyon) {
-    if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
-    if (typeof isGameRunning !== "undefined" && !isGameRunning) return;
+    if (window.isGameWaitingToStart) window.isGameWaitingToStart = false;
+    if (!window.isGameRunning) return;
     
     fonksiyon();
     clearInterval(mobilHareketInterval);
     mobilHareketInterval = setInterval(fonksiyon, MOBIL_HIZ_DONGUSU_MS);
 }
 
-function mobilDonguDurdur() { clearInterval(mobilHareketInterval); }
+function mobilDonguDurdur() { 
+    clearInterval(mobilHareketInterval); 
+}
 
-// --- BUTON DİNLEYİCİLERİ ---
-
+// MOUSE & TOUCH EVENT BINDINGS (Hem mobil hem masaüstü testleri için entegre)
 if (bLeft) { 
     bLeft.addEventListener("touchstart", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveLeft); }); 
-    bLeft.addEventListener("touchend", mobilDonguDurdur);
+    bLeft.addEventListener("touchend", (e) => { e.preventDefault(); mobilDonguDurdur(); });
+    bLeft.addEventListener("mousedown", () => mobilDonguBaslat(mobilMoveLeft));
+    bLeft.addEventListener("mouseup", mobilDonguDurdur);
+    bLeft.addEventListener("mouseleave", mobilDonguDurdur);
 }
 
 if (bRight) { 
     bRight.addEventListener("touchstart", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveRight); }); 
-    bRight.addEventListener("touchend", mobilDonguDurdur);
+    bRight.addEventListener("touchend", (e) => { e.preventDefault(); mobilDonguDurdur(); });
+    bRight.addEventListener("mousedown", () => mobilDonguBaslat(mobilMoveRight));
+    bRight.addEventListener("mouseup", mobilDonguDurdur);
+    bRight.addEventListener("mouseleave", mobilDonguDurdur);
 }
 
-// YUKARI (Yılan ve Ateş)
 if (bUp) { 
     bUp.addEventListener("touchstart", (e) => { 
         e.preventDefault(); 
-        if(activeGame === "snake") {
-            if(window.dy === 0) { window.dx = 0; window.dy = -window.gridSize; }
-        } else if (typeof actionKey === "function") {
-            if(activeGame === "space") mobilDonguBaslat(actionKey);
-            else actionKey();
+        if(window.activeGame === "snake" && window.snakeDir) {
+            if(window.snakeDir.y !== 1) window.snakeDir = {x:0, y:-1};
+        } else if (typeof window.fireOrJump === "function") {
+            window.fireOrJump();
         }
-    }); 
+    });
+    bUp.addEventListener("mousedown", () => {
+        if(window.activeGame === "snake" && window.snakeDir) {
+            if(window.snakeDir.y !== 1) window.snakeDir = {x:0, y:-1};
+        } else if (typeof window.fireOrJump === "function") {
+            window.fireOrJump();
+        }
+    });
 }
 
-// AŞAĞI
 if (bDown) { 
     bDown.addEventListener("touchstart", (e) => { 
         e.preventDefault(); 
-        if(activeGame === "snake") {
-            if(window.dy === 0) { window.dx = 0; window.dy = window.gridSize; }
+        if(window.activeGame === "snake" && window.snakeDir) {
+            if(window.snakeDir.y !== -1) window.snakeDir = {x:0, y:1};
         }
-    }); 
+    });
+    bDown.addEventListener("mousedown", () => {
+        if(window.activeGame === "snake" && window.snakeDir) {
+            if(window.snakeDir.y !== -1) window.snakeDir = {x:0, y:1};
+        }
+    });
 }
 
-// AKSİYON
 if (bAction) { 
-    bAction.addEventListener("touchstart", (e) => { 
-        e.preventDefault(); 
-        if (typeof actionKey === 'function') actionKey();
-    }); 
+    const triggerAction = (e) => {
+        if(e) e.preventDefault();
+        if (typeof window.fireOrJump === 'function') window.fireOrJump();
+    };
+    bAction.addEventListener("touchstart", triggerAction); 
+    bAction.addEventListener("mousedown", triggerAction);
 }
