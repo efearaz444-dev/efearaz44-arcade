@@ -5,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EFEARAZ44 ARCADE</title>
     <link rel="stylesheet" href="./style.css">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">
 </head>
 <body>
     <div id="particles-js"></div>
 
-    <div id="nameModal" class="modal" style="display:flex;">
+    <div id="nameModal" class="modal">
         <div class="modal-content">
-            <h2>Arcade'e Hoş Geldin</h2>
-            <p>Kayıt ol veya giriş yap, maceraya başla!</p>
-            <input type="text" id="usernameInput" placeholder="Kullanıcı Adı" style="display:block; width:100%; margin-bottom:10px; padding:10px;">
-            <input type="password" id="passwordInput" placeholder="Şifre" style="display:block; width:100%; margin-bottom:10px; padding:10px;">
-            <button id="saveNameBtn" onclick="girisYapVeyaKaydol()">Giriş Yap / Kaydol</button>
-            <p style="margin:10px 0;">veya</p>
-            <button id="googleLoginBtn" onclick="googleIleGiris()" style="background:#4285f4; color:white;">Google ile Devam Et</button>
+            <h2>Kullanıcı Adı Girin</h2>
+            <p>Skor tablosunda yerinizi almak için bir takma ad seçin.</p>
+  <input type="text" id="usernameInput" placeholder="Kullanıcı adı girin..." value="">
+
+  <input type="password" id="passwordInput" placeholder="Şifrenizi girin..." style="margin-top: 10px; width: 100%; padding: 10px 0; background: #000; border: 1px solid #fff; color: #fff; border-radius: 5px; text-align: center; box-sizing: border-box;">
+            <button id="saveNameBtn">Arcade'e Gir</button>
         </div>
     </div>
 
@@ -50,8 +55,8 @@
             <button id="selectCatch">🌟Yıldız Avcısı</button>
         </nav>
 
-        <main class="main-arena">
-            <aside class="side-panel leaderboard">
+<main class="main-arena">
+<aside class="side-panel leaderboard">
                 <h3>🏆 En İyiler</h3>
                 <div class="score-row"><span>👑 Rekor:</span> <span id="allTimeBest">Yükleniyor...</span></div>
                 <hr>
@@ -116,42 +121,34 @@
             </div>
             <div id="shapeContainer" class="shape-container"></div>
         </footer>
-    </div> 
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-
-    <script src="js/firebase-config.js"></script>
-
-    <script src="controls.js"></script>
-    <script src="js/firebase-multi.js"></script>
-    <script src="main.js"></script>
-
+</div> <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    
     <script>
-        // Kütüphanenin yüklendiğinden emin olmak için küçük bir kontrol
-        if (typeof particlesJS !== 'undefined') {
-            particlesJS('particles-js', {
-                "particles": {
-                    "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#ffffff" },
-                    "shape": { "type": "circle" },
-                    "opacity": { "value": 0.3, "random": true },
-                    "size": { "value": 2, "random": false },
-                    "line_linked": { "enable": true, "distance": 120, "color": "#ffffff", "opacity": 0.25, "width": 1 },
-                    "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
-                },
-                "interactivity": {
-                    "detect_on": "window", 
-                    "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }
-                },
-                "retina_detect": false 
-            });
-        } else {
-            console.error("Particles.js kütüphanesi yüklenemedi!");
-        }
-    </script>
+        // Arka plan partikülleri için varsayılan siber konfigürasyon
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 40, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#00ffff" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.2, "random": false },
+                "size": { "value": 3, "random": true },
+                "line_linked": { "enable": true, "distance": 150, "color": "#00ffff", "opacity": 0.15, "width": 1 },
+                "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+            },
+            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false }, "onclick": { "enable": false } } },
+            "retina_detect": true
+        });
+</script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="controls.js"></script>
+<script src="js/firebase-multi.js"></script>
+
+
+<script src="main.js"></script>
 </body>
 </html>

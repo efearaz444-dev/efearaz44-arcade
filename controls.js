@@ -1,10 +1,6 @@
 // ============================================================================
 // --- MOBİL BASILI TUTMA VE GELİŞMİŞ HIZLANDIRMA MOTORU (CONTROLS.JS) ---
 // ============================================================================
-window.dx = 0;
-window.dy = 0;
-window.gridSize = 20;
-
 const bUp = document.getElementById("btnUp");
 const bDown = document.getElementById("btnDown");
 const bLeft = document.getElementById("btnLeft");
@@ -12,94 +8,104 @@ const bRight = document.getElementById("btnRight");
 const bAction = document.getElementById("btnAction");
 
 let mobilHareketInterval = null;
-const MOBIL_HIZ_DONGUSU_MS = 25; // 45ms'den 25ms'ye düşürülerek daha akıcı basılı tutma sağlandı
+const MOBIL_HIZ_DONGUSU_MS = 45; // Basılı tuttuğunda ne kadar hızlı tekrarlayacağı (Düşük sayı = Daha hızlı)
 
+// --- MOBİL ÖZEL HAREKET FONKSİYONLARI ---
+// main.js içindeki moveLeft ve moveRight fonksiyonlarını ezmeden mobil hızı katlıyoruz
 function mobilMoveLeft() {
-    if (!window.isGameRunning) return;
-    const g = window.activeGame;
-    
-    // main.js'deki global değişken adlarıyla tam senkronizasyon sağlandı
-    if (g === "brick" || g === "pong") { if(window.paddle && window.paddle.x > 0) window.paddle.x -= 8; }
-    else if (g === "space") { if(window.playerX !== undefined && window.playerX > 10) window.playerX -= 7; }
-    else if (g === "catch") { if(window.catcherX !== undefined && window.catcherX > 0) window.catcherX -= 8; }
+    if (activeGame === "brick" && paddle.x > 0) paddle.x -= (paddle.speed * 1.5);
+    else if (activeGame === "space" && playerShip.x > 0) playerShip.x -= (playerShip.speed * 1.5);
+    else if (activeGame === "pong" && pongPad.y > 0) pongPad.y -= (pongPad.speed * 1.4);
+    else if (activeGame === "catch" && catcher.x > 0) catcher.x -= (catcher.speed * 1.5);
+    else if (typeof moveLeft === "function") moveLeft(); // Diğer oyunlar için fallback
 }
 
 function mobilMoveRight() {
-    if (!window.isGameRunning) return;
-    const g = window.activeGame;
-    
-    if (g === "brick" || g === "pong") { if(window.paddle && window.paddle.x < 320) window.paddle.x += 8; }
-    else if (g === "space") { if(window.playerX !== undefined && window.playerX < 350) window.playerX += 7; }
-    else if (g === "catch") { if(window.catcherX !== undefined && window.catcherX < 340) window.catcherX += 8; }
+    if (activeGame === "brick" && paddle.x < canvas.width - paddle.width) paddle.x += (paddle.speed * 1.5);
+    else if (activeGame === "space" && playerShip.x < canvas.width - playerShip.width) playerShip.x += (playerShip.speed * 1.5);
+    else if (activeGame === "pong" && pongPad.y < canvas.height - pongPad.height) paddle.y += (pongPad.speed * 1.4);
+    else if (activeGame === "catch" && catcher.x < canvas.width - catcher.w) catcher.x += (catcher.speed * 1.5);
+    else if (typeof moveRight === "function") moveRight(); // Diğer oyunlar için fallback
 }
 
+// --- DÖNGÜ BAŞLATMA VE DURDURMA ---
 function mobilDonguBaslat(fonksiyon) {
-    if (window.isGameWaitingToStart) window.isGameWaitingToStart = false;
-    if (!window.isGameRunning) return;
+    if (isGameWaitingToStart) { isGameWaitingToStart = false; return; }
+    if (!isGameRunning) return;
     
+    // Önce basar basmaz tek bir kere tetikle (Gecikme hissini yok eder)
     fonksiyon();
+    
+    // Sonra basılı tutulduğu sürece döngüye sok
     clearInterval(mobilHareketInterval);
     mobilHareketInterval = setInterval(fonksiyon, MOBIL_HIZ_DONGUSU_MS);
 }
 
-function mobilDonguDurdur() { 
-    clearInterval(mobilHareketInterval); 
+function mobilDonguDurdur() {
+    clearInterval(mobilHareketInterval);
 }
 
-// MOUSE & TOUCH EVENT BINDINGS (Hem mobil hem masaüstü testleri için entegre)
+// --- BUTON DİNLEYİCİLERİ ---
+
+// A. SOL BUTON
 if (bLeft) { 
     bLeft.addEventListener("touchstart", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveLeft); }); 
-    bLeft.addEventListener("touchend", (e) => { e.preventDefault(); mobilDonguDurdur(); });
-    bLeft.addEventListener("mousedown", () => mobilDonguBaslat(mobilMoveLeft));
-    bLeft.addEventListener("mouseup", mobilDonguDurdur);
-    bLeft.addEventListener("mouseleave", mobilDonguDurdur);
+    bLeft.addEventListener("touchend", mobilDonguDurdur);
+    bLeft.addEventListener("touchcancel", mobilDonguDurdur);
+    bLeft.addEventListener("click", () => { if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } mobilMoveLeft(); }); 
 }
 
+// B. SAĞ BUTON
 if (bRight) { 
     bRight.addEventListener("touchstart", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveRight); }); 
-    bRight.addEventListener("touchend", (e) => { e.preventDefault(); mobilDonguDurdur(); });
-    bRight.addEventListener("mousedown", () => mobilDonguBaslat(mobilMoveRight));
-    bRight.addEventListener("mouseup", mobilDonguDurdur);
-    bRight.addEventListener("mouseleave", mobilDonguDurdur);
+    bRight.addEventListener("touchend", mobilDonguDurdur);
+    bRight.addEventListener("touchcancel", mobilDonguDurdur);
+    bRight.addEventListener("click", () => { if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } mobilMoveRight(); }); 
 }
 
+// C. YUKARI BUTON (Yılan için yön, Flappy/Dino için zıplama)
 if (bUp) { 
     bUp.addEventListener("touchstart", (e) => { 
         e.preventDefault(); 
-        if(window.activeGame === "snake" && window.snakeDir) {
-            if(window.snakeDir.y !== 1) window.snakeDir = {x:0, y:-1};
-        } else if (typeof window.fireOrJump === "function") {
-            window.fireOrJump();
+        if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } 
+        if(activeGame === "snake") {
+            if(dy === 0) { dx = 0; dy = -gridSize; }
+        } else {
+            // Uzay savaşında basılı tutunca seri ateş etsin diye döngüye bağlıyoruz
+            if(activeGame === "space") mobilDonguBaslat(actionKey);
+            else actionKey();
         }
-    });
-    bUp.addEventListener("mousedown", () => {
-        if(window.activeGame === "snake" && window.snakeDir) {
-            if(window.snakeDir.y !== 1) window.snakeDir = {x:0, y:-1};
-        } else if (typeof window.fireOrJump === "function") {
-            window.fireOrJump();
-        }
-    });
+    }); 
+    bUp.addEventListener("touchend", mobilDonguDurdur);
+    bUp.addEventListener("click", () => { 
+        if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } 
+        if(activeGame === "snake" && dy === 0){ dx = 0; dy = -gridSize; } else actionKey(); 
+    }); 
 }
 
+// D. AŞAĞI BUTON (Sadece Yılan oyunu için yön)
 if (bDown) { 
     bDown.addEventListener("touchstart", (e) => { 
         e.preventDefault(); 
-        if(window.activeGame === "snake" && window.snakeDir) {
-            if(window.snakeDir.y !== -1) window.snakeDir = {x:0, y:1};
-        }
-    });
-    bDown.addEventListener("mousedown", () => {
-        if(window.activeGame === "snake" && window.snakeDir) {
-            if(window.snakeDir.y !== -1) window.snakeDir = {x:0, y:1};
-        }
-    });
+        if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } 
+        if(activeGame === "snake" && dy === 0){ dx = 0; dy = gridSize; } 
+    }); 
+    bDown.addEventListener("click", () => { 
+        if(isGameWaitingToStart){ isGameWaitingToStart = false; return; } 
+        if(activeGame === "snake" && dy === 0){ dx = 0; dy = gridSize; } 
+    }); 
 }
 
+// E. AKSİYON / ATEŞ / ZIPLAMA BUTONU
 if (bAction) { 
-    const triggerAction = (e) => {
-        if(e) e.preventDefault();
-        if (typeof window.fireOrJump === 'function') window.fireOrJump();
-    };
-    bAction.addEventListener("touchstart", triggerAction); 
-    bAction.addEventListener("mousedown", triggerAction);
+    bAction.addEventListener("touchstart", (e) => { 
+        e.preventDefault(); 
+        if(activeGame === "space") {
+            mobilDonguBaslat(actionKey); // Uzayda basılı tutunca aralıksız tarasın
+        } else {
+            actionKey();
+        }
+    }); 
+    bAction.addEventListener("touchend", mobilDonguDurdur);
+    bAction.addEventListener("click", actionKey); 
 }
