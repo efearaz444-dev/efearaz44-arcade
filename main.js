@@ -45,7 +45,7 @@ const totalGoldEl = document.getElementById("totalGold");
 const totalTimeDisplay = document.getElementById("totalTimeDisplay");
 
 // ============================================================================
-// --- FIREBASE AUTH & KULLANICI YÖNETİMİ (YENİ SİSTEM) ---
+// --- FIREBASE AUTH & KULLANICI YÖNETİMİ ---
 // ============================================================================
 
 // Kullanıcı Giriş Durumunu İzle
@@ -81,7 +81,6 @@ auth.onAuthStateChanged((user) => {
 // ============================================================================
 
 window.googleIleGiris = () => {
-    // window.auth nesnesinin yüklendiğinden emin oluyoruz
     if (!window.auth) return alert("Firebase henüz başlatılmadı, lütfen biraz bekle.");
 
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -97,7 +96,6 @@ window.googleIleGiris = () => {
 };
 
 window.girisYapVeyaKaydol = async () => {
-    // Nesneleri global window üzerinden güvenli çekiyoruz
     const auth = window.auth;
     const database = window.database;
     
@@ -108,26 +106,35 @@ window.girisYapVeyaKaydol = async () => {
 
     if (!emailInput || !passwordInput) return alert("Kullanıcı adı ve şifre girmelisin!");
 
-    const email = emailInput.includes("@") ? emailInput : `${emailInput}@arcade.com`;
+    // Kullanıcı adını Firebase'in kabul edeceği güvenli e-posta formatına zorluyoruz
+    const email = emailInput.includes("@") ? emailInput : `${emailInput.toLowerCase()}@arcade.com`;
 
     try {
+        // Önce girilen bilgilerle giriş yapmayı deniyoruz
         await auth.signInWithEmailAndPassword(email, passwordInput);
         location.reload();
     } catch (error) {
-        // Yeni Firebase sürümlerinde hata kodları değişebiliyor, yakalamayı genişlettik
+        // Eğer kullanıcı bulunamadıysa ya da yeni kimlik doğrulama hatası döndüyse yeni kayıt açıyoruz
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, passwordInput);
                 
+                // Realtime veritabanına varsayılan oyuncu şablonunu yazıyoruz
                 await database.ref('users/' + userCredential.user.uid).set({
                     username: emailInput,
                     gold: 0,
-                    score: 0,
+                    totalTime: 0,
+                    snake_best: 0,
+                    brick_best: 0,
+                    space_best: 0,
+                    flappy_best: 0,
+                    pong_best: 0,
+                    blockblast_best: 0,
                     created_at: new Date().toISOString()
                 });
                 location.reload();
             } catch (kayitHata) {
-                alert("Kayıt olunamadı: " + kayitHata.message);
+                alert("Kayıt olunamadı (Şifreniz en az 6 karakter olmalıdır): " + kayitHata.message);
             }
         } else {
             alert("Giriş Hatası: " + error.message);
@@ -288,7 +295,7 @@ document.getElementById("selectGartic")?.addEventListener("click", () => switchG
 document.getElementById("selectDino")?.addEventListener("click", () => switchGame("dino"));
 document.getElementById("selectCatch")?.addEventListener("click", () => switchGame("catch"));
 
-// Tuval Temizleme (Dışarıdan erişim için pencereye bağlandı)
+// Tuval Temizleme
 function clearCanvas() {
     const c = document.getElementById("gameCanvas");
     if(!c) return;
@@ -308,7 +315,7 @@ function updateEngine() {
 }
 
 // ============================================================================
-// --- [BURADAN SONRASI OYUNLARIN KENDİ KODLARIDIR - DEĞİŞİKLİK YAPILMADI] ---
+// --- OYUNLARIN KENDİ KODLARI ---
 // ============================================================================
 
 // --- SNAKE OYUNU ---
@@ -322,9 +329,7 @@ function generateFood() {
 }
 function updateSnake() {
     if(!isGameRunning || isGameWaitingToStart) return;
-    let head = { x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.x }; 
-    // Hatalı eksen hareket düzeltmesi
-    head.x = snake[0].x + snakeDir.x; head.y = snake[0].y + snakeDir.y;
+    let head = { x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.y };
     
     if(head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) return gameOver();
     for(let s of snake) { if(s.x === head.x && s.y === head.y) return gameOver(); }
@@ -560,7 +565,6 @@ document.querySelectorAll(".skin-btn").forEach(btn => {
         } else {
             if(currentGold >= cost) {
                 currentGold -= cost;
-                // Veritabanındaki altını düşür
                 database.ref('users/' + auth.currentUser.uid).update({ gold: currentGold });
                 purchasedSkins.push(skin); b.innerText = "Seçili";
                 currentSkin = skin;
