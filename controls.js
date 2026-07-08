@@ -175,13 +175,13 @@ if (bDown) {
 
 // AKSİYON / ATEŞ BUTONU
 if (bAction) {
-    bAction.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        actionKey();
+    bAction.addEventListener("touchstart", (e) => { 
+        e.preventDefault(); 
+        actionKey(); 
     });
-    bAction.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        actionKey();
+    bAction.addEventListener("mousedown", (e) => { 
+        e.preventDefault(); 
+        actionKey(); 
     });
 }
 
