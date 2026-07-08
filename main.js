@@ -1154,15 +1154,26 @@ function gameOver(silent = false) {
 // ============================================================================
 // --- %100 LOKAL İLK 10 SKOR VE ARAYÜZ SIRALAMA MOTORU (updateLeaderboardUI) ---
 // ============================================================================
+// ============================================================================
+// --- GERÇEK LOKAL SKOR TABLOSU (ÇÖKMEYEN GARANTİLİ SÜRÜM) ---
+// ============================================================================
 function updateLeaderboardUI() { 
-    // 1. Eski temel oyunların metinlerini güncelle (Eğer HTML'de yerleri varsa)
-    if(snakeBestCtx) snakeBestCtx.innerText = (arcadeScores.snake || 0) + " Puan"; 
-    if(brickBestCtx) brickBestCtx.innerText = (arcadeScores.brick || 0) + " Puan"; 
-    if(spaceBestCtx) spaceBestCtx.innerText = (arcadeScores.space || 0) + " Puan"; 
-    if(flappyBestCtx) flappyBestCtx.innerText = (arcadeScores.flappy || 0) + " Puan"; 
-    if(pongBestCtx) pongBestCtx.innerText = (arcadeScores.pong || 0) + " Puan"; 
+    // 1. Klasik mini oyunların yanındaki skorları güncelle
+    if(typeof snakeBestCtx !== "undefined" && snakeBestCtx) snakeBestCtx.innerText = (arcadeScores.snake || 0) + " Puan"; 
+    if(typeof brickBestCtx !== "undefined" && brickBestCtx) brickBestCtx.innerText = (arcadeScores.brick || 0) + " Puan"; 
+    if(typeof spaceBestCtx !== "undefined" && spaceBestCtx) spaceBestCtx.innerText = (arcadeScores.space || 0) + " Puan"; 
+    if(typeof flappyBestCtx !== "undefined" && flappyBestCtx) flappyBestCtx.innerText = (arcadeScores.flappy || 0) + " Puan"; 
+    if(typeof pongBestCtx !== "undefined" && pongBestCtx) pongBestCtx.innerText = (arcadeScores.pong || 0) + " Puan"; 
     
-    // 2. Projedeki tüm oyunların listesi ve sol panelde görünecek Türkçe isimleri
+    const listContainer = document.getElementById("leaderboardList");
+    if (!listContainer) return;
+
+    let siraliSkorlar = [];
+
+    // Trollediğin Vahitcan'ı ve eski skorunu buraya sağlama alıyoruz, listede ilk o görünecek
+    siraliSkorlar.push({ name: "Vahitcan", score: 30 });
+
+    // Projedeki tüm oyunların listesi
     const tumOyunlar = [
         { key: "snake", name: "Yılan" }, { key: "brick", name: "Tuğla" },
         { key: "space", name: "Uzay" }, { key: "flappy", name: "Bird" },
@@ -1175,58 +1186,59 @@ function updateLeaderboardUI() {
         { key: "colormatch", name: "Eşleme" }, { key: "soundwave", name: "Wave" }
     ];
 
-    let siraliSkorlar = [];
-
-    // Vahitcan'ın dünkü 30 puanlık rekorunu doğrudan koda gömüyoruz, böylece hafıza sıfırlansa bile listeden gitmez
-    siraliSkorlar.push({ name: "Vahitcan", score: 30 });
-
-    // 3. Bilgisayarda kayıtlı olan tüm oyunların rekorlarını çekiyoruz
+    // Bilgisayarda kayıtlı olan senin skorlarını güvenli bir şekilde çekiyoruz
     tumOyunlar.forEach(o => {
-        let localRekor = parseInt(localStorage.getItem(o.key + "Best") || "0");
-        let objeRekor = arcadeScores[o.key] || 0;
-        let enYuksek = Math.max(localRekor, objeRekor);
+        try {
+            let localRekor = parseInt(localStorage.getItem(o.key + "Best") || "0");
+            let objeRekor = arcadeScores ? (arcadeScores[o.key] || 0) : 0;
+            let enYuksek = Math.max(localRekor, objeRekor);
 
-        if (enYuksek > 0) {
-            // Giriş yapmış kullanıcıyı al, yoksa "efearaz44" yaz
-            let oyuncuAdi = (usernameInput && usernameInput.value) ? usernameInput.value : (arcadeScores.allTimePlayer || "efearaz44");
-            siraliSkorlar.push({
-                name: `${oyuncuAdi} (${o.name})`,
-                score: enYuksek
-            });
+            if (enYuksek > 0) {
+                let oyuncuAdi = "efearaz44";
+                if (typeof usernameInput !== "undefined" && usernameInput && usernameInput.value) {
+                    oyuncuAdi = usernameInput.value;
+                } else if (arcadeScores && arcadeScores.allTimePlayer) {
+                    oyuncuAdi = arcadeScores.allTimePlayer;
+                }
+                
+                siraliSkorlar.push({
+                    name: `${oyuncuAdi} (${o.name})`,
+                    score: enYuksek
+                });
+            }
+        } catch(e) {
+            console.error("Skor çekilirken hata oluştu ama kod devam ediyor:", e);
         }
     });
 
-    // 4. BÜYÜKTEN KÜÇÜĞE KUSURSUZ SIRALA
+    // Büyükten küçüğe sırala
     siraliSkorlar.sort((a, b) => b.score - a.score);
 
-    // 5. LİSTEYİ SADECE İLK 10 SKOR OLACAK ŞEKİLDE SINIRLA (Taşma/Scrollbar Kesin Çözümü)
+    // Sadece ilk 10 rekoru göster (Scrollbar çıkmasın diye)
     let ilkOn = siraliSkorlar.slice(0, 10);
 
-    // 6. SOL PANELDEKİ TABLOYA YAZDIRMA
-    const listContainer = document.getElementById("leaderboardList");
-    if (listContainer) {
-        listContainer.innerHTML = "";
-        ilkOn.forEach((player, index) => {
-            let li = document.createElement("li");
-            li.style.display = "flex";
-            li.style.justify = "space-between";
-            li.style.padding = "6px 0";
-            li.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
-            
-            let emoji = "👤";
-            if (index === 0) emoji = "👑";
-            else if (index === 1) emoji = "🥈";
-            else if (index === 2) emoji = "🥉";
-            
-            li.innerHTML = `<span>${emoji} ${player.name}</span> <span style="color:#00ffcc; font-weight:bold;">${player.score} Puan</span>`;
-            listContainer.appendChild(li);
-        });
-    }
+    // HTML'e yazdırma kısmı (Şimdi kesin dolacak)
+    listContainer.innerHTML = "";
+    ilkOn.forEach((player, index) => {
+        let li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.justify = "space-between";
+        li.style.padding = "6px 0";
+        li.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+        
+        let emoji = "👤";
+        if (index === 0) emoji = "👑";
+        else if (index === 1) emoji = "🥈";
+        else if (index === 2) emoji = "🥉";
+        
+        li.innerHTML = `<span>${emoji} ${player.name}</span> <span style="color:#00ffcc; font-weight:bold;">${player.score} Puan</span>`;
+        listContainer.appendChild(li);
+    });
 
-    // En tepeye oturan rekoru "En Yüksek Puanım" kutusuna bas
+    // Üstteki "En Yüksek Puanım" panelini güncelle
     let mutlakMax = siraliSkorlar.length > 0 ? siraliSkorlar[0].score : 0;
     let mutlakLider = siraliSkorlar.length > 0 ? siraliSkorlar[0].name : "Henüz yok...";
-    if(allTimeBestCtx) {
+    if(typeof allTimeBestCtx !== "undefined" && allTimeBestCtx) {
         allTimeBestCtx.innerText = mutlakMax > 0 ? mutlakLider + " - " + mutlakMax + " Puan" : "Henüz yok...";
     }
 }
