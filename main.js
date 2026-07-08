@@ -127,6 +127,11 @@ function toggleBGM() {
     }
 }
 
+// Sayfa açıldığında Firebase'deki liderlik tablosunu otomatik çek
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(globalLeaderboardCek, 1500); // Firebase'in tamamen yüklenmesi için 1.5 saniye esneklik payı
+});
+
 // --- BAŞLANGIÇ YÖNETİMİ ---
 window.onload = function() {
     globalLeaderboardCek();
