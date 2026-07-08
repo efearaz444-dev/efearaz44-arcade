@@ -1241,3 +1241,49 @@ document.querySelectorAll(".skin-btn").forEach(btn => {
     const timeDisplayElement = document.getElementById("totalTimeDisplay"); if (timeDisplayElement) { timeDisplayElement.innerText = zamanFormatla(toplamSaniye); }
     setInterval(() => { toplamSaniye++; localStorage.setItem("arcade_total_time", toplamSaniye); if (timeDisplayElement) { timeDisplayElement.innerText = zamanFormatla(toplamSaniye); } }, 1000);
 })();
+// ============================================================================
+// --- SİSTEMDE EKSİK OLAN ANA REKOR KAYDETME MOTORU (saveLocalScore) ---
+// ============================================================================
+function saveLocalScore(gameName, finalScore) {
+    if (!gameName) return;
+    
+    // 1. Gelen oyun adını temizle ve küçük harf standardına getir
+    let cleanName = gameName.toLowerCase().replace(/\s+/g, '');
+    
+    // 2. Tarayıcı hafızasındaki (localStorage) mevcut skoru çek
+    let currentBest = parseInt(localStorage.getItem(cleanName + "Best") || "0");
+    
+    // 3. Eğer yapılan skor eskisinden büyükse rekoru güncelle
+    if (finalScore > currentBest) {
+        localStorage.setItem(cleanName + "Best", finalScore.toString());
+        currentBest = finalScore;
+    }
+    
+    // 4. SOL PANELDEKİ "EN İYİLER" SKOR TABLOSUNU ANLIK GÜNCELLEME
+    // HTML'deki id'ler ile JS tarafındaki oyun isimlerini eşleştiriyoruz
+    const elementEslestirme = {
+        "snake": "snakeBest",       "brick": "brickBest",
+        "space": "spaceBest",       "flappy": "flappyBest",
+        "pong": "pongBest",         "blockblast": "blockblastBest",
+        "dino": "dinoBest",         "catch": "catcherBest",
+        "meteors": "meteorsBest",   "hexrunner": "hexrunnerBest",
+        "neonhelix": "neonhelixBest","bithopper": "bithopperBest",
+        "gridout": "gridoutBest",   "coinrain": "coinrainBest",
+        "speeddriver": "speeddriverBest", "mathrush": "mathrushBest",
+        "colormatch": "colormatchBest", "soundwave": "soundwaveBest",
+        "multixox": "multixoxBest",   "multitank": "multitankBest"
+    };
+
+    let targetElementId = elementEslestirme[cleanName];
+    if (targetElementId) {
+        let el = document.getElementById(targetElementId);
+        if (el) {
+            el.innerText = currentBest + " Puan";
+        }
+    }
+    
+    // Dosyadaki genel arayüz yenileme fonksiyonunu tetikle
+    if (typeof updateLeaderboardUI === "function") {
+        updateLeaderboardUI();
+    }
+}
