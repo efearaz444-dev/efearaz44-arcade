@@ -1223,14 +1223,19 @@ function globalSkorKaydet(kullaniciAdi, sifre, alinanSkor) {
 }
 
 function globalLeaderboardCek() {
-    const db = window.database || firebase.database();
+    const db = window.database || (typeof firebase !== "undefined" ? firebase.database() : null);
+    const listContainer = document.getElementById("leaderboardList");
+    if (!listContainer) return;
     
-    // Firebase'den en yüksek rekorlara göre verileri çekiyoruz
+    // Firebase yoksa veya henüz bağlanmadıysa lokaldeki rekorları göstererek panoyu boş bırakmıyoruz
+    if (!db) {
+        console.warn("Firebase bulunamadı, lokal skorlar yükleniyor...");
+        let localMax = Math.max(arcadeScores.snake||0, arcadeScores.brick||0, arcadeScores.space||0);
+        listContainer.innerHTML = `<li style="padding:5px 0; text-align:center; color:#aaa;">👤 ${arcadeScores.allTimePlayer || "efearaz44"} - ${localMax} Puan</li>`;
+        return;
+    }
+
     db.ref('users').orderByChild('enYuksekSkor').limitToLast(20).once('value').then((snapshot) => {
-        // Sol taraftaki ana listenin id'si olan leaderboardList'i hedef alıyoruz
-        const listContainer = document.getElementById("leaderboardList");
-        if (!listContainer) return;
-        
         let oyuncuListesi = [];
         snapshot.forEach((childSnapshot) => {
             let data = childSnapshot.val();
@@ -1239,15 +1244,18 @@ function globalLeaderboardCek() {
             }
         });
         
-        // Büyükten küçüğe kusursuz sıralama
+        // Büyükten küçüğe sırala
         oyuncuListesi.sort((a, b) => b.enYuksekSkor - a.enYuksekSkor);
 
-        // Tam olarak İLK 10 KİŞİYİ alıyoruz (Taşma ve scrollbar kesin çözüm)
+        // Tam ilk 10 kişiyi filtrele (Taşma kesin çözüm)
         let ilkOn = oyuncuListesi.slice(0, 10);
-
-        // İçeriği temizle ve Firebase'den gelen gerçek ilk 10'u yazdır
         listContainer.innerHTML = "";
         
+        if(ilkOn.length === 0) {
+            listContainer.innerHTML = `<li style="padding:5px 0; text-align:center; color:#aaa;">Henüz rekor yok...</li>`;
+            return;
+        }
+
         ilkOn.forEach((oyuncu, index) => {
             let li = document.createElement("li");
             li.style.display = "flex";
@@ -1255,7 +1263,6 @@ function globalLeaderboardCek() {
             li.style.padding = "6px 0";
             li.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
             
-            // İlk 3 sıraya şık madalya emojileri
             let emoji = "👤";
             if (index === 0) emoji = "👑";
             else if (index === 1) emoji = "🥈";
