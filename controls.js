@@ -8,7 +8,7 @@ const bRight = document.getElementById("btnRight");
 const bAction = document.getElementById("btnAction");
 
 let mobilHareketInterval = null;
-const MOBIL_HIZ_DONGUSU_MS = 30; // Tank oyunlarında daha akıcı dönsün diye hızı 30ms'ye çektik
+const MOBIL_HIZ_DONGUSU_MS = 45; // Basılı tuttuğunda ne kadar hızlı tekrarlayacağı (Düşük sayı = Daha hızlı)
 
 // --- MOBİL ÖZEL HAREKET FONKSİYONLARI ---
 function mobilMoveLeft() {
@@ -17,13 +17,11 @@ function mobilMoveLeft() {
     else if (activeGame === "pong" && typeof pongPad !== "undefined" && pongPad.y > 0) pongPad.y -= (pongPad.speed * 1.4);
     else if (activeGame === "catch" && typeof catcher !== "undefined" && catcher.x > 0) catcher.x -= (catcher.speed * 1.5);
     else if (activeGame === "multitank") {
-        // Tank oyununda SOL buton namluyu döndürür (Hem P1 hem P2 için garantiye alıyoruz)
-        if (typeof tankP1 !== "undefined") tankP1.angle -= 0.08;
-        if (typeof tankP2 !== "undefined") tankP2.angle -= 0.08;
+        // İki tankın da yönünü/açısını sola döndürür
+        if (typeof tankP1 !== "undefined") tankP1.angle -= 0.05;
+        if (typeof tankP2 !== "undefined") tankP2.angle -= 0.05;
     }
-    
-    // Sistemdeki orijinal klavye tetikleyicisini çalıştır
-    if (typeof moveLeft === "function") moveLeft(); 
+    else if (typeof moveLeft === "function") moveLeft(); // Diğer oyunlar için fallback
 }
 
 function mobilMoveRight() {
@@ -35,39 +33,23 @@ function mobilMoveRight() {
     else if (activeGame === "pong" && typeof pongPad !== "undefined" && pongPad.y + pongPad.height < canvasEl.height) pongPad.y += (pongPad.speed * 1.4);
     else if (activeGame === "catch" && typeof catcher !== "undefined" && catcher.x + catcher.width < maxW) catcher.x += (catcher.speed * 1.5);
     else if (activeGame === "multitank") {
-        // Tank oyununda SAĞ buton namluyu döndürür
-        if (typeof tankP1 !== "undefined") tankP1.angle += 0.08;
-        if (typeof tankP2 !== "undefined") tankP2.angle += 0.08;
+        // İki tankın da yönünü/açısını sağa döndürür
+        if (typeof tankP1 !== "undefined") tankP1.angle += 0.05;
+        if (typeof tankP2 !== "undefined") tankP2.angle += 0.05;
     }
-    
-    // Sistemdeki orijinal klavye tetikleyicisini çalıştır
-    if (typeof moveRight === "function") moveRight(); 
+    else if (typeof moveRight === "function") moveRight(); // Diğer oyunlar için fallback
 }
 
 function mobilMoveUp() {
     if (activeGame === "multitank") {
-        // YUKARI butonu tankları ileri sürer (Açılarına göre hareket)
+        // İki tankı da ileri sürer (Açılarına göre x ve y ekseninde ilerleme)
         if (typeof tankP1 !== "undefined") {
-            tankP1.x += Math.cos(tankP1.angle) * 3.5;
-            tankP1.y += Math.sin(tankP1.angle) * 3.5;
+            tankP1.x += Math.cos(tankP1.angle) * 3;
+            tankP1.y += Math.sin(tankP1.angle) * 3;
         }
         if (typeof tankP2 !== "undefined") {
-            tankP2.x += Math.cos(tankP2.angle) * 3.5;
-            tankP2.y += Math.sin(tankP2.angle) * 3.5;
-        }
-    }
-}
-
-function mobilMoveDown() {
-    if (activeGame === "multitank") {
-        // AŞAĞI butonu tankları geri sürer
-        if (typeof tankP1 !== "undefined") {
-            tankP1.x -= Math.cos(tankP1.angle) * 2.5;
-            tankP1.y -= Math.sin(tankP1.angle) * 2.5;
-        }
-        if (typeof tankP2 !== "undefined") {
-            tankP2.x -= Math.cos(tankP2.angle) * 2.5;
-            tankP2.y -= Math.sin(tankP2.angle) * 2.5;
+            tankP2.x += Math.cos(tankP2.angle) * 3;
+            tankP2.y += Math.sin(tankP2.angle) * 3;
         }
     }
 }
@@ -75,7 +57,7 @@ function mobilMoveDown() {
 // --- DÖNGÜ YÖNETİCİLERİ ---
 function mobilDonguBaslat(fonksiyon) {
     if (mobilHareketInterval) clearInterval(mobilHareketInterval);
-    fonksiyon(); 
+    fonksiyon(); // İlk basışta hemen tetikle (gecikme hissi olmasın)
     mobilHareketInterval = setInterval(fonksiyon, MOBIL_HIZ_DONGUSU_MS);
 }
 
@@ -86,15 +68,15 @@ function mobilDonguDurdur() {
     }
 }
 
-// Global ateş ve aksiyon fonksiyonu
+// Global olarak tetiklenecek ortak zıplama/ateş fonksiyonu
 function actionKey() {
     if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) {
         isGameWaitingToStart = false;
         return;
     }
     
+    // MULTITANK ÖZEL: İki tank birden aynı anda ateş eder
     if (activeGame === "multitank") {
-        // Tank P1 ve P2'nin mermi dizisine lazerleri pushla
         if (typeof tankP1 !== "undefined" && tankP1.lasers) {
             tankP1.lasers.push({ x: tankP1.x, y: tankP1.y, dx: Math.cos(tankP1.angle)*6, dy: Math.sin(tankP1.angle)*6 });
         }
@@ -103,6 +85,7 @@ function actionKey() {
         }
         if (typeof playSound === "function") playSound("laser");
     }
+    // Hangi oyundaysak onun ana aksiyonunu tetikle
     else if (activeGame === "flappy" && typeof flap === "function") flap();
     else if (activeGame === "dino" && typeof dinoJump === "function") dinoJump();
     else if (activeGame === "space" && typeof fireBullet === "function") fireBullet();
@@ -112,80 +95,104 @@ function actionKey() {
 // --- BUTON OLAY DİNLEYİCİLERİ (TOUCH & CLICK ENTEGRASYONU) ---
 // ============================================================================
 
-// SOL BUTON
+// A. SOL BUTON
 if (bLeft) {
     bLeft.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        mobilDonguBaslat(mobilMoveLeft);
+        if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
+        
+        if (activeGame === "snake") {
+            if (typeof dx !== "undefined" && dx === 0) { dx = -gridSize; dy = 0; }
+        } else {
+            mobilDonguBaslat(mobilMoveLeft);
+        }
     });
     bLeft.addEventListener("touchend", mobilDonguDurdur);
     bLeft.addEventListener("touchcancel", mobilDonguDurdur);
-    bLeft.addEventListener("mousedown", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveLeft); });
-    bLeft.addEventListener("mouseup", mobilDonguDurdur);
-    bLeft.addEventListener("mouseleave", mobilDonguDurdur);
+    bLeft.addEventListener("click", () => {
+        if (activeGame === "snake" && typeof dx !== "undefined" && dx === 0) { dx = -gridSize; dy = 0; }
+    });
 }
 
-// SAĞ BUTON
+// B. SAĞ BUTON
 if (bRight) {
     bRight.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        mobilDonguBaslat(mobilMoveRight);
+        if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
+        
+        if (activeGame === "snake") {
+            if (typeof dx !== "undefined" && dx === 0) { dx = gridSize; dy = 0; }
+        } else {
+            mobilDonguBaslat(mobilMoveRight);
+        }
     });
     bRight.addEventListener("touchend", mobilDonguDurdur);
     bRight.addEventListener("touchcancel", mobilDonguDurdur);
-    bRight.addEventListener("mousedown", (e) => { e.preventDefault(); mobilDonguBaslat(mobilMoveRight); });
-    bRight.addEventListener("mouseup", mobilDonguDurdur);
-    bRight.addEventListener("mouseleave", mobilDonguDurdur);
+    bRight.addEventListener("click", () => {
+        if (activeGame === "snake" && typeof dx !== "undefined" && dx === 0) { dx = gridSize; dy = 0; }
+    });
 }
 
-// YUKARI BUTON
+// C. YUKARI BUTON
 if (bUp) {
     bUp.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        if (activeGame === "multitank") {
+        if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
+        
+        if (activeGame === "snake") {
+            if (typeof dy !== "undefined" && dy === 0) { dx = 0; dy = -gridSize; }
+        } else if (activeGame === "multitank") {
             mobilDonguBaslat(mobilMoveUp);
         } else {
-            actionKey();
+            if (activeGame === "space") mobilDonguBaslat(actionKey);
+            else actionKey();
         }
     });
     bUp.addEventListener("touchend", mobilDonguDurdur);
     bUp.addEventListener("touchcancel", mobilDonguDurdur);
-    bUp.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        if (activeGame === "multitank") mobilDonguBaslat(mobilMoveUp);
-        else actionKey();
+    bUp.addEventListener("click", () => {
+        if (activeGame === "snake" && typeof dy !== "undefined" && dy === 0) { dx = 0; dy = -gridSize; }
     });
-    bUp.addEventListener("mouseup", mobilDonguDurdur);
 }
 
-// AŞAĞI BUTON
+// D. AŞAĞI BUTON
 if (bDown) {
     bDown.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        if (activeGame === "multitank") mobilDonguBaslat(mobilMoveDown);
+        if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
+        
+        if (activeGame === "snake") {
+            if (typeof dy !== "undefined" && dy === 0) { dx = 0; dy = gridSize; }
+        } else if (activeGame === "multitank") {
+            mobilDonguBaslat(mobilMoveDown);
+        }
     });
     bDown.addEventListener("touchend", mobilDonguDurdur);
     bDown.addEventListener("touchcancel", mobilDonguDurdur);
-    bDown.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        if (activeGame === "multitank") mobilDonguBaslat(mobilMoveDown);
+    bDown.addEventListener("click", () => {
+        if (activeGame === "snake" && typeof dy !== "undefined" && dy === 0) { dx = 0; dy = gridSize; }
     });
-    bDown.addEventListener("mouseup", mobilDonguDurdur);
 }
 
-// AKSİYON / ATEŞ BUTONU
+// E. AKSİYON / ATEŞ / ZIPLAMA BUTONU
 if (bAction) {
-    bAction.addEventListener("touchstart", (e) => { 
-        e.preventDefault(); 
-        actionKey(); 
+    bAction.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        // Multitank modunda basılı tutunca oyun kasmasın diye direkt tek tık aksiyon tetikliyoruz
+        if (activeGame === "space") {
+            mobilDonguBaslat(actionKey);
+        } else {
+            actionKey();
+        }
     });
-    bAction.addEventListener("mousedown", (e) => { 
-        e.preventDefault(); 
-        actionKey(); 
+    bAction.addEventListener("touchend", mobilDonguDurdur);
+    bAction.addEventListener("touchcancel", mobilDonguDurdur);
+    bAction.addEventListener("click", () => {
+        if (activeGame !== "space") actionKey();
     });
 }
 
-// Seçilme/Titreme Engelleme
+// Mobil cihazlarda butonlara basıldığında ekranın titremesini/seçilmesini önlemek için CSS temizliği
 document.querySelectorAll(".arrow-btn, .action-btn, .mobile-start-btn").forEach(btn => {
     btn.style.webkitUserSelect = "none";
     btn.style.userSelect = "none";
