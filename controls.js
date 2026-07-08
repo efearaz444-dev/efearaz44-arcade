@@ -54,20 +54,6 @@ function mobilMoveUp() {
     }
 }
 
-function mobilMoveDown() {
-    if (activeGame === "multitank") {
-        // İki tankı da geri sürer
-        if (typeof tankP1 !== "undefined") {
-            tankP1.x -= Math.cos(tankP1.angle) * 3;
-            tankP1.y -= Math.sin(tankP1.angle) * 3;
-        }
-        if (typeof tankP2 !== "undefined") {
-            tankP2.x -= Math.cos(tankP2.angle) * 3;
-            tankP2.y -= Math.sin(tankP2.angle) * 3;
-        }
-    }
-}
-
 // --- DÖNGÜ YÖNETİCİLERİ ---
 function mobilDonguBaslat(fonksiyon) {
     if (mobilHareketInterval) clearInterval(mobilHareketInterval);
@@ -192,7 +178,8 @@ if (bDown) {
 if (bAction) {
     bAction.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        if (activeGame === "space" || activeGame === "multitank") {
+        // Multitank modunda basılı tutunca oyun kasmasın diye direkt tek tık aksiyon tetikliyoruz
+        if (activeGame === "space") {
             mobilDonguBaslat(actionKey);
         } else {
             actionKey();
@@ -201,7 +188,7 @@ if (bAction) {
     bAction.addEventListener("touchend", mobilDonguDurdur);
     bAction.addEventListener("touchcancel", mobilDonguDurdur);
     bAction.addEventListener("click", () => {
-        if (activeGame !== "space" && activeGame !== "multitank") actionKey();
+        if (activeGame !== "space") actionKey();
     });
 }
 
