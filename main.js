@@ -557,13 +557,25 @@ function checkBBGameOver() {
 // ============================================================================
 // --- YENİ EKLENEN 10 ADET TEK KİŞİLİK MINI ARCADE OYUNLARI ---
 // ============================================================================
+// ============================================================================
+// --- GÜNCELLENMİŞ OYUN MOTORLARI (SES, ALTIN VE REKOR ENTEGRASYONLU) ---
+// ============================================================================
 
-// 1. METEORS (GÖKTAŞI KAÇIŞ)
+// 1. GÖKTAŞI KAÇIŞI (METEORS)
 function initMeteors() { arcadeMeteors = []; meteorTimer = 0; paddle.x = 160; }
 function updateMeteors() {
-    meteorTimer++; if (meteorTimer % 20 === 0) arcadeMeteors.push({ x: Math.random() * 380, y: 0, size: Math.random() * 15 + 10, speed: Math.random() * 3 + 3 });
+    meteorTimer++; 
+    if (meteorTimer % 20 === 0) arcadeMeteors.push({ x: Math.random() * 380, y: 0, size: Math.random() * 15 + 10, speed: Math.random() * 3 + 3 });
     arcadeMeteors.forEach((m, idx) => {
-        m.y += m.speed; if (m.y > canvas.height) { arcadeMeteors.splice(idx, 1); score += 10; scoreElement.innerText = score; addGold(1); }
+        m.y += m.speed; 
+        if (m.y > canvas.height) { 
+            arcadeMeteors.splice(idx, 1); 
+            score += 10; 
+            scoreElement.innerText = score; 
+            if (typeof addGold === "function") addGold(1); 
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("meteors", score);
+        }
         if (m.y + m.size >= paddle.y && m.x >= paddle.x && m.x <= paddle.x + paddle.width) { gameOver(); }
     });
     drawMeteors();
@@ -576,7 +588,15 @@ function updateHexRunner() {
     dino.vy += 0.7; dino.y += dino.vy; if(dino.y > 300) { dino.y = 300; dino.vy = 0; }
     hexTimer++; if (hexTimer % 50 === 0) hexObstacles.push({ x: canvas.width, type: Math.random() > 0.5 ? "low" : "high", w: 20, h: 30 });
     hexObstacles.forEach((o, idx) => {
-        o.x -= 6; if (o.x < -20) { hexObstacles.splice(idx, 1); score += 15; scoreElement.innerText = score; }
+        o.x -= 6; 
+        if (o.x < -20) { 
+            hexObstacles.splice(idx, 1); 
+            score += 15; 
+            scoreElement.innerText = score; 
+            if (typeof addGold === "function") addGold(2);
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("hexrunner", score);
+        }
         let oY = o.type === "low" ? 310 : 250;
         if (o.x < dino.x + dino.w && o.x + o.w > dino.x && dino.y < oY + o.h && dino.y + dino.h > oY) { gameOver(); }
     });
@@ -592,7 +612,13 @@ function updateNeonHelix() {
         if(Math.abs(helixBall.y - g.y) < 8) {
             let relativeAngle = Math.atan2(0, 1) - helixAngle;
             let normalized = (relativeAngle + Math.PI*2) % (Math.PI*2);
-            if (Math.abs(normalized - g.gap) < 0.6) { score += 30; scoreElement.innerText = score; } else { helixBall.vy = -5; playSound("dink"); }
+            if (Math.abs(normalized - g.gap) < 0.6) { 
+                score += 30; 
+                scoreElement.innerText = score; 
+                if (typeof addGold === "function") addGold(5);
+                if (typeof playSound === "function") playSound("coin");
+                if (typeof saveLocalScore === "function") saveLocalScore("neonhelix", score);
+            } else { helixBall.vy = -5; if (typeof playSound === "function") playSound("dink"); }
         }
         g.y -= 1; if(g.y < 0) { g.y = canvas.height; g.gap = Math.random()*Math.PI*2; }
     });
@@ -612,7 +638,14 @@ function initBitHopper() { hopPlatforms = []; hopPlayer = { x: 200, y: 300, vy: 
 function updateBitHopper() {
     hopPlayer.vy += 0.25; hopPlayer.y += hopPlayer.vy;
     hopPlatforms.forEach(p => {
-        if(hopPlayer.vy > 0 && hopPlayer.x+15 > p.x && hopPlayer.x < p.x+p.w && hopPlayer.y+20 >= p.y && hopPlayer.y+20 <= p.y+p.h) { hopPlayer.vy = -7.5; score += 5; scoreElement.innerText = score; playSound("dink"); }
+        if(hopPlayer.vy > 0 && hopPlayer.x+15 > p.x && hopPlayer.x < p.x+p.w && hopPlayer.y+20 >= p.y && hopPlayer.y+20 <= p.y+p.h) { 
+            hopPlayer.vy = -7.5; 
+            score += 5; 
+            scoreElement.innerText = score; 
+            if (typeof addGold === "function") addGold(1);
+            if (typeof playSound === "function") playSound("dink"); 
+            if (typeof saveLocalScore === "function") saveLocalScore("bithopper", score);
+        }
         if(hopPlayer.y < 200) { p.y += 3; }
     });
     if(hopPlayer.y < 200) hopPlayer.y += 3;
@@ -640,10 +673,17 @@ function handleGridOutClick(x, y) {
     let size = 80; let startX = 80, startY = 100;
     let c = Math.floor((x - startX)/size); let r = Math.floor((y - startY)/size);
     if(c>=0 && c<3 && r>=0 && r<3) {
-        let id = r*3 + c; playSound("dink");
+        let id = r*3 + c; if (typeof playSound === "function") playSound("dink");
         if (gridPattern.includes(id) && !gridUserSequence.includes(id)) {
-            gridUserSequence.push(id); score += 20; scoreElement.innerText = score;
-            if(gridUserSequence.length === gridPattern.length) { addGold(30); initGridOut(); }
+            gridUserSequence.push(id); 
+            score += 20; 
+            scoreElement.innerText = score;
+            if (typeof saveLocalScore === "function") saveLocalScore("gridout", score);
+            if(gridUserSequence.length === gridPattern.length) { 
+                if (typeof addGold === "function") addGold(30); 
+                if (typeof playSound === "function") playSound("coin");
+                initGridOut(); 
+            }
         } else { gameOver(); }
     }
 }
@@ -651,13 +691,19 @@ function handleGridOutClick(x, y) {
 // 6. COIN RAIN (PARA YAĞMURU)
 function initCoinRain() { coinTimer = 600; coinItems = []; paddle.x = 160; }
 function updateCoinRain() {
-    coinTimer--; if(coinTimer <= 0) { addGold(score/2); gameOver(); return; }
+    coinTimer--; if(coinTimer <= 0) { if (typeof addGold === "function") addGold(score/2); gameOver(); return; }
     if(Math.random() < 0.08) coinItems.push({ x: Math.random()*380, y: 0, t: Math.random() > 0.2 ? "gold" : "bomb" });
     coinItems.forEach((c, idx) => {
         c.y += 4; if (c.y > canvas.height) coinItems.splice(idx, 1);
         if(c.y >= paddle.y && c.x >= paddle.x && c.x <= paddle.x + paddle.width) {
             coinItems.splice(idx, 1);
-            if(c.t === "gold") { score += 50; scoreElement.innerText = score; playSound("coin"); } else { gameOver(); }
+            if(c.t === "gold") { 
+                score += 50; 
+                scoreElement.innerText = score; 
+                if (typeof addGold === "function") addGold(5);
+                if (typeof playSound === "function") playSound("coin"); 
+                if (typeof saveLocalScore === "function") saveLocalScore("coinrain", score);
+            } else { gameOver(); }
         }
     });
     drawCoinRain();
@@ -669,7 +715,15 @@ function initSpeedDriver() { roadX = 180; trafficCars = []; }
 function updateSpeedDriver() {
     if (Math.random() < 0.03) trafficCars.push({ x: Math.random()*160 + 100, y: -40, speed: 4 });
     trafficCars.forEach((tc, idx) => {
-        tc.y += tc.speed; if (tc.y > canvas.height) { trafficCars.splice(idx,1); score += 25; scoreElement.innerText = score; }
+        tc.y += tc.speed; 
+        if (tc.y > canvas.height) { 
+            trafficCars.splice(idx,1); 
+            score += 25; 
+            scoreElement.innerText = score; 
+            if (typeof addGold === "function") addGold(3);
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("speeddriver", score);
+        }
         if (tc.y+40 >= 340 && tc.x+30 >= roadX && tc.x <= roadX+30) { gameOver(); }
     });
     drawSpeedDriver();
@@ -690,7 +744,14 @@ function initMathRush() {
 }
 function updateMathRush() {
     hexTimer += 2; if (hexTimer > canvas.height) {
-        if (mathOptions[mathLane] === mathAnswer) { score += 100; scoreElement.innerText = score; addGold(5); initMathRush(); } else { gameOver(); }
+        if (mathOptions[mathLane] === mathAnswer) { 
+            score += 100; 
+            scoreElement.innerText = score; 
+            if (typeof addGold === "function") addGold(15); 
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("mathrush", score);
+            initMathRush(); 
+        } else { gameOver(); }
     }
     drawMathRush();
 }
@@ -709,7 +770,15 @@ function drawMathRush() {
 function initColorMatch() { colorCircle = { targetColor: "#00ffcc", options: ["#00ffcc", "#ff0055"] }; ball.y = 0; ball.x = 200; ball.dy = 4; }
 function updateColorMatch() {
     ball.y += ball.dy; if(ball.y >= 350) {
-        if (colorCircle.targetColor === colorCircle.options[0]) { score += 40; scoreElement.innerText = score; ball.y = 0; colorCircle.targetColor = Math.random() > 0.5 ? "#00ffcc" : "#ff0055"; } else { gameOver(); }
+        if (colorCircle.targetColor === colorCircle.options[0]) { 
+            score += 40; 
+            scoreElement.innerText = score; 
+            ball.y = 0; 
+            if (typeof addGold === "function") addGold(5);
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("colormatch", score);
+            colorCircle.targetColor = Math.random() > 0.5 ? "#00ffcc" : "#ff0055"; 
+        } else { gameOver(); }
     }
     drawColorMatch();
 }
@@ -726,7 +795,15 @@ function updateSoundWave() {
     if (keysPressed["ArrowUp"] || keysPressed["w"]) wavePlayer.y -= 4; else wavePlayer.y += 3;
     if (hexTimer % 40 === 0) waveObstacles.push({ x: canvas.width, top: Math.random()*150, bottom: Math.random()*150 + 250 });
     waveObstacles.forEach((o, idx) => {
-        o.x -= 4; if(o.x < -40) waveObstacles.splice(idx, 1);
+        o.x -= 4; 
+        if(o.x < -40) {
+            waveObstacles.splice(idx, 1);
+            score += 20;
+            scoreElement.innerText = score;
+            if (typeof addGold === "function") addGold(3);
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("soundwave", score);
+        }
         if(wavePlayer.x > o.x && wavePlayer.x < o.x+40 && (wavePlayer.y < o.top || wavePlayer.y > o.bottom)) { gameOver(); }
     });
     if(wavePlayer.y < 0 || wavePlayer.y > canvas.height) gameOver();
@@ -734,15 +811,15 @@ function updateSoundWave() {
 }
 function drawSoundWave() {
     clearCanvas(); drawWatermark();
-    ctx.fillStyle = "#00ffcc"; ctx.beginPath(); ctx.arc(wavePlayer.x, wavePlayer.y, 10, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#00ffcc"; ctx.beginPath(); ctx.arc(wavePlayer.x, wavePlayer.y, 10, 0, Math.PI`*2`); ctx.fill();
     ctx.fillStyle = "#ff0055"; waveObstacles.forEach(o => { ctx.fillRect(o.x, 0, 40, o.top); ctx.fillRect(o.x, o.bottom, 40, canvas.height-o.bottom); });
 }
 
 // ============================================================================
-// --- YENİ EKLENEN 2 ADET ÇOK OYUNCULUR (DÜELLO) OYUN MOTORLARI ---
+// --- ÇOK OYUNCULUR (DÜELLO) OYUN MOTORLARI ---
 // ============================================================================
 
-// 1. MULTIPLAYER X-O-X
+// 11. MULTIPLAYER X-O-X (ONLINE / LOKAL)
 function initMultiXOX() { xoxGrid = Array(9).fill(""); xoxTurn = "X"; scoreElement.innerText = "X Sırası"; }
 function drawMultiXOX() {
     clearCanvas(); drawWatermark(); let size = 100; let start = 50;
@@ -763,8 +840,14 @@ function handleMultiXOXClick(x, y) {
     if(c>=0 && c<3 && r>=0 && r<3) {
         let idx = r*3 + c;
         if(xoxGrid[idx] === "") {
-            xoxGrid[idx] = xoxTurn; playSound("dink");
-            if (checkXOXWin()) { scoreElement.innerText = `${xoxTurn} Kazandı! 🎉`; isGameRunning = false; }
+            xoxGrid[idx] = xoxTurn; if (typeof playSound === "function") playSound("dink");
+            if (checkXOXWin()) { 
+                scoreElement.innerText = `${xoxTurn} Kazandı! 🎉`; 
+                isGameRunning = false; 
+                if (typeof addGold === "function") addGold(50); // Kazanan tarafa 50 Altın bonus
+                if (typeof playSound === "function") playSound("coin");
+                if (typeof saveLocalScore === "function") saveLocalScore("multixox", 1);
+            }
             else { xoxTurn = xoxTurn === "X" ? "O" : "X"; scoreElement.innerText = `${xoxTurn} Sırası`; }
             drawMultiXOX();
         }
@@ -775,7 +858,7 @@ function checkXOXWin() {
     return wins.some(w => xoxGrid[w[0]] !== "" && xoxGrid[w[0]] === xoxGrid[w[1]] && xoxGrid[w[0]] === xoxGrid[w[2]]);
 }
 
-// 2. MULTIPLAYER NEON TANK SAVAŞI
+// 12. MULTIPLAYER NEON TANK SAVAŞI
 function initMultiTank() {
     tankP1 = { x: 60, y: 200, angle: 0, lasers: [], color: "#ff0055" };
     tankP2 = { x: 340, y: 200, angle: Math.PI, lasers: [], color: "#00ffcc" };
@@ -784,12 +867,24 @@ function updateMultiTank() {
     tankP1.lasers.forEach((l, idx) => {
         l.x += l.dx; l.y += l.dy;
         if (l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.height) tankP1.lasers.splice(idx, 1);
-        if (Math.hypot(l.x - tankP2.x, l.y - tankP2.y) < 18) { scoreElement.innerText = "P1 KAZANDI!"; gameOver(); }
+        if (Math.hypot(l.x - tankP2.x, l.y - tankP2.y) < 18) { 
+            scoreElement.innerText = "P1 KAZANDI! 🛡️"; 
+            if (typeof addGold === "function") addGold(100); // Tank galibiyetine büyük ödül
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("multitank", 100);
+            gameOver(); 
+        }
     });
     tankP2.lasers.forEach((l, idx) => {
         l.x += l.dx; l.y += l.dy;
         if (l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.height) tankP2.lasers.splice(idx, 1);
-        if (Math.hypot(l.x - tankP1.x, l.y - tankP1.y) < 18) { scoreElement.innerText = "P2 KAZANDI!"; gameOver(); }
+        if (Math.hypot(l.x - tankP1.x, l.y - tankP1.y) < 18) { 
+            scoreElement.innerText = "P2 KAZANDI! 🛡️"; 
+            if (typeof addGold === "function") addGold(100);
+            if (typeof playSound === "function") playSound("coin");
+            if (typeof saveLocalScore === "function") saveLocalScore("multitank", 100);
+            gameOver(); 
+        }
     });
     drawMultiTank();
 }
