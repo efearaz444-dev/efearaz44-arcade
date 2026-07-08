@@ -11,16 +11,12 @@ let mobilHareketInterval = null;
 const MOBIL_HIZ_DONGUSU_MS = 45; // Basılı tuttuğunda ne kadar hızlı tekrarlayacağı (Düşük sayı = Daha hızlı)
 
 // --- MOBİL ÖZEL HAREKET FONKSİYONLARI ---
+// main.js içindeki moveLeft ve moveRight fonksiyonlarını ezmeden mobil hızı katlıyoruz
 function mobilMoveLeft() {
     if (activeGame === "brick" && typeof paddle !== "undefined" && paddle.x > 0) paddle.x -= (paddle.speed * 1.5);
     else if (activeGame === "space" && typeof playerShip !== "undefined" && playerShip.x > 0) playerShip.x -= (playerShip.speed * 1.5);
     else if (activeGame === "pong" && typeof pongPad !== "undefined" && pongPad.y > 0) pongPad.y -= (pongPad.speed * 1.4);
     else if (activeGame === "catch" && typeof catcher !== "undefined" && catcher.x > 0) catcher.x -= (catcher.speed * 1.5);
-    else if (activeGame === "multitank") {
-        // İki tankın da yönünü/açısını sola döndürür
-        if (typeof tankP1 !== "undefined") tankP1.angle -= 0.05;
-        if (typeof tankP2 !== "undefined") tankP2.angle -= 0.05;
-    }
     else if (typeof moveLeft === "function") moveLeft(); // Diğer oyunlar için fallback
 }
 
@@ -32,26 +28,7 @@ function mobilMoveRight() {
     else if (activeGame === "space" && typeof playerShip !== "undefined" && playerShip.x + playerShip.width < maxW) playerShip.x += (playerShip.speed * 1.5);
     else if (activeGame === "pong" && typeof pongPad !== "undefined" && pongPad.y + pongPad.height < canvasEl.height) pongPad.y += (pongPad.speed * 1.4);
     else if (activeGame === "catch" && typeof catcher !== "undefined" && catcher.x + catcher.width < maxW) catcher.x += (catcher.speed * 1.5);
-    else if (activeGame === "multitank") {
-        // İki tankın da yönünü/açısını sağa döndürür
-        if (typeof tankP1 !== "undefined") tankP1.angle += 0.05;
-        if (typeof tankP2 !== "undefined") tankP2.angle += 0.05;
-    }
     else if (typeof moveRight === "function") moveRight(); // Diğer oyunlar için fallback
-}
-
-function mobilMoveUp() {
-    if (activeGame === "multitank") {
-        // İki tankı da ileri sürer (Açılarına göre x ve y ekseninde ilerleme)
-        if (typeof tankP1 !== "undefined") {
-            tankP1.x += Math.cos(tankP1.angle) * 3;
-            tankP1.y += Math.sin(tankP1.angle) * 3;
-        }
-        if (typeof tankP2 !== "undefined") {
-            tankP2.x += Math.cos(tankP2.angle) * 3;
-            tankP2.y += Math.sin(tankP2.angle) * 3;
-        }
-    }
 }
 
 // --- DÖNGÜ YÖNETİCİLERİ ---
@@ -74,19 +51,8 @@ function actionKey() {
         isGameWaitingToStart = false;
         return;
     }
-    
-    // MULTITANK ÖZEL: İki tank birden aynı anda ateş eder
-    if (activeGame === "multitank") {
-        if (typeof tankP1 !== "undefined" && tankP1.lasers) {
-            tankP1.lasers.push({ x: tankP1.x, y: tankP1.y, dx: Math.cos(tankP1.angle)*6, dy: Math.sin(tankP1.angle)*6 });
-        }
-        if (typeof tankP2 !== "undefined" && tankP2.lasers) {
-            tankP2.lasers.push({ x: tankP2.x, y: tankP2.y, dx: Math.cos(tankP2.angle)*6, dy: Math.sin(tankP2.angle)*6 });
-        }
-        if (typeof playSound === "function") playSound("laser");
-    }
     // Hangi oyundaysak onun ana aksiyonunu tetikle
-    else if (activeGame === "flappy" && typeof flap === "function") flap();
+    if (activeGame === "flappy" && typeof flap === "function") flap();
     else if (activeGame === "dino" && typeof dinoJump === "function") dinoJump();
     else if (activeGame === "space" && typeof fireBullet === "function") fireBullet();
 }
@@ -141,8 +107,6 @@ if (bUp) {
         
         if (activeGame === "snake") {
             if (typeof dy !== "undefined" && dy === 0) { dx = 0; dy = -gridSize; }
-        } else if (activeGame === "multitank") {
-            mobilDonguBaslat(mobilMoveUp);
         } else {
             if (activeGame === "space") mobilDonguBaslat(actionKey);
             else actionKey();
@@ -161,10 +125,8 @@ if (bDown) {
         e.preventDefault();
         if (typeof isGameWaitingToStart !== "undefined" && isGameWaitingToStart) { isGameWaitingToStart = false; return; }
         
-        if (activeGame === "snake") {
-            if (typeof dy !== "undefined" && dy === 0) { dx = 0; dy = gridSize; }
-        } else if (activeGame === "multitank") {
-            mobilDonguBaslat(mobilMoveDown);
+        if (activeGame === "snake" && typeof dy !== "undefined" && dy === 0) {
+            dx = 0; dy = gridSize;
         }
     });
     bDown.addEventListener("touchend", mobilDonguDurdur);
@@ -178,7 +140,6 @@ if (bDown) {
 if (bAction) {
     bAction.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        // Multitank modunda basılı tutunca oyun kasmasın diye direkt tek tık aksiyon tetikliyoruz
         if (activeGame === "space") {
             mobilDonguBaslat(actionKey);
         } else {
